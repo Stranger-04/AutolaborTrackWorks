@@ -1,0 +1,3 @@
+Symlinking /opt/autolabor/ros/catkin_ws/devel/share/autolabor_description/cmake/autolabor_descriptionConfig.cmake
+Symlinking /opt/autolabor/ros/catkin_ws/devel/share/autolabor_description/cmake/autolabor_descriptionConfig-version.cmake
+Symlinking /opt/autolabor/ros/catkin_ws/devel/lib/pkgconfig/autolabor_description.pc

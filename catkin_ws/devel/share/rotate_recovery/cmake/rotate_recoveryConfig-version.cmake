@@ -1,0 +1,1 @@
+/opt/autolabor/ros/catkin_ws/devel/.private/rotate_recovery/share/rotate_recovery/cmake/rotate_recoveryConfig-version.cmake

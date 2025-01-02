@@ -1,0 +1,4 @@
+Symlinking /opt/autolabor/ros/catkin_ws/devel/share/joy/cmake/joyConfig.cmake
+Symlinking /opt/autolabor/ros/catkin_ws/devel/share/joy/cmake/joyConfig-version.cmake
+Symlinking /opt/autolabor/ros/catkin_ws/devel/lib/joy/joy_node
+Symlinking /opt/autolabor/ros/catkin_ws/devel/lib/pkgconfig/joy.pc

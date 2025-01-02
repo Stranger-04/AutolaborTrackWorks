@@ -1,0 +1,12 @@
+Symlinking /opt/autolabor/ros/catkin_ws/devel/./env.sh
+Symlinking /opt/autolabor/ros/catkin_ws/devel/./_setup_util.py
+Symlinking /opt/autolabor/ros/catkin_ws/devel/./setup.bash
+Symlinking /opt/autolabor/ros/catkin_ws/devel/./setup.zsh
+Symlinking /opt/autolabor/ros/catkin_ws/devel/./cmake.lock
+Symlinking /opt/autolabor/ros/catkin_ws/devel/./local_setup.bash
+Symlinking /opt/autolabor/ros/catkin_ws/devel/./local_setup.zsh
+Symlinking /opt/autolabor/ros/catkin_ws/devel/./setup.sh
+Symlinking /opt/autolabor/ros/catkin_ws/devel/./local_setup.sh
+Symlinking /opt/autolabor/ros/catkin_ws/devel/share/catkin_tools_prebuild/cmake/catkin_tools_prebuildConfig.cmake
+Symlinking /opt/autolabor/ros/catkin_ws/devel/share/catkin_tools_prebuild/cmake/catkin_tools_prebuildConfig-version.cmake
+Symlinking /opt/autolabor/ros/catkin_ws/devel/lib/pkgconfig/catkin_tools_prebuild.pc

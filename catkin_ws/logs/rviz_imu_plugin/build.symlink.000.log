@@ -1,0 +1,4 @@
+Symlinking /opt/autolabor/ros/catkin_ws/devel/share/rviz_imu_plugin/cmake/rviz_imu_pluginConfig-version.cmake
+Symlinking /opt/autolabor/ros/catkin_ws/devel/share/rviz_imu_plugin/cmake/rviz_imu_pluginConfig.cmake
+Symlinking /opt/autolabor/ros/catkin_ws/devel/lib/librviz_imu_plugin.so
+Symlinking /opt/autolabor/ros/catkin_ws/devel/lib/pkgconfig/rviz_imu_plugin.pc

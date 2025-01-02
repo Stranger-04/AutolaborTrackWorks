@@ -1,0 +1,6 @@
+Symlinking /opt/autolabor/ros/catkin_ws/devel/share/gmapping/cmake/gmappingConfig.cmake
+Symlinking /opt/autolabor/ros/catkin_ws/devel/share/gmapping/cmake/gmappingConfig-version.cmake
+Symlinking /opt/autolabor/ros/catkin_ws/devel/lib/libslam_gmapping_nodelet.so
+Symlinking /opt/autolabor/ros/catkin_ws/devel/lib/gmapping/slam_gmapping
+Symlinking /opt/autolabor/ros/catkin_ws/devel/lib/gmapping/slam_gmapping_replay
+Symlinking /opt/autolabor/ros/catkin_ws/devel/lib/pkgconfig/gmapping.pc

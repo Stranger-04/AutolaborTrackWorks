@@ -1,0 +1,4 @@
+Symlinking /opt/autolabor/ros/catkin_ws/devel/share/location_fusion/cmake/location_fusionConfig-version.cmake
+Symlinking /opt/autolabor/ros/catkin_ws/devel/share/location_fusion/cmake/location_fusionConfig.cmake
+Symlinking /opt/autolabor/ros/catkin_ws/devel/lib/pkgconfig/location_fusion.pc
+Symlinking /opt/autolabor/ros/catkin_ws/devel/lib/location_fusion/simple_fusion

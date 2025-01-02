@@ -1,0 +1,2 @@
+- setup-file:
+    local-name: /opt/autolabor/ros/catkin_ws/devel/.private/autolabor_pro1_driver/setup.sh

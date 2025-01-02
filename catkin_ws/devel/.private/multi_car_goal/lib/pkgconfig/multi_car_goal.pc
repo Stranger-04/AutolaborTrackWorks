@@ -1,0 +1,8 @@
+prefix=/opt/autolabor/ros/catkin_ws/devel/.private/multi_car_goal
+
+Name: multi_car_goal
+Description: Description of multi_car_goal
+Version: 0.0.0
+Cflags: -I/opt/autolabor/ros/catkin_ws/src/navigation/multi_car_goal/include
+Libs: -L${prefix}/lib 
+Requires: 

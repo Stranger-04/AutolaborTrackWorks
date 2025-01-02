@@ -1,0 +1,2 @@
+- setup-file:
+    local-name: /opt/autolabor/ros/catkin_ws/devel/.private/rviz_keyboard_twist/setup.sh

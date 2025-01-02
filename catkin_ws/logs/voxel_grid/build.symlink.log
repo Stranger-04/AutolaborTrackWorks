@@ -1,0 +1,4 @@
+Symlinking /opt/autolabor/ros/catkin_ws/devel/share/voxel_grid/cmake/voxel_gridConfig-version.cmake
+Symlinking /opt/autolabor/ros/catkin_ws/devel/share/voxel_grid/cmake/voxel_gridConfig.cmake
+Symlinking /opt/autolabor/ros/catkin_ws/devel/lib/libvoxel_grid.so
+Symlinking /opt/autolabor/ros/catkin_ws/devel/lib/pkgconfig/voxel_grid.pc

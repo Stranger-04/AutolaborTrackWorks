@@ -1,0 +1,4 @@
+Symlinking /opt/autolabor/ros/catkin_ws/devel/share/camera_calibration/cmake/camera_calibrationConfig.cmake
+Symlinking /opt/autolabor/ros/catkin_ws/devel/share/camera_calibration/cmake/camera_calibrationConfig-version.cmake
+Symlinking /opt/autolabor/ros/catkin_ws/devel/lib/python2.7/dist-packages/camera_calibration/__init__.py
+Symlinking /opt/autolabor/ros/catkin_ws/devel/lib/pkgconfig/camera_calibration.pc

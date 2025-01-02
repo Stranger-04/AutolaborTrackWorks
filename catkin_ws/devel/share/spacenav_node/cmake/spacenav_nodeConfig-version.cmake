@@ -1,0 +1,1 @@
+/opt/autolabor/ros/catkin_ws/devel/.private/spacenav_node/share/spacenav_node/cmake/spacenav_nodeConfig-version.cmake

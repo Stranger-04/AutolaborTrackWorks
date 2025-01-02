@@ -1,0 +1,4 @@
+Symlinking /opt/autolabor/ros/catkin_ws/devel/share/fake_localization/cmake/fake_localizationConfig-version.cmake
+Symlinking /opt/autolabor/ros/catkin_ws/devel/share/fake_localization/cmake/fake_localizationConfig.cmake
+Symlinking /opt/autolabor/ros/catkin_ws/devel/lib/fake_localization/fake_localization
+Symlinking /opt/autolabor/ros/catkin_ws/devel/lib/pkgconfig/fake_localization.pc

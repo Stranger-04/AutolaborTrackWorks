@@ -1,0 +1,7 @@
+driver/depth_camera/iai_kinect2-master/kinect2_registration
+/opt/autolabor/ros/catkin_ws/devel/.private/kinect2_registration/cmake.lock /opt/autolabor/ros/catkin_ws/devel/./cmake.lock
+/opt/autolabor/ros/catkin_ws/devel/.private/kinect2_registration/share/kinect2_registration/cmake/kinect2_registrationConfig-version.cmake /opt/autolabor/ros/catkin_ws/devel/share/kinect2_registration/cmake/kinect2_registrationConfig-version.cmake
+/opt/autolabor/ros/catkin_ws/devel/.private/kinect2_registration/share/kinect2_registration/cmake/kinect2_registrationConfig.cmake /opt/autolabor/ros/catkin_ws/devel/share/kinect2_registration/cmake/kinect2_registrationConfig.cmake
+/opt/autolabor/ros/catkin_ws/devel/.private/kinect2_registration/share/kinect2_registration/cmake/kinect2_registration.cmake /opt/autolabor/ros/catkin_ws/devel/share/kinect2_registration/cmake/kinect2_registration.cmake
+/opt/autolabor/ros/catkin_ws/devel/.private/kinect2_registration/lib/libkinect2_registration.so /opt/autolabor/ros/catkin_ws/devel/lib/libkinect2_registration.so
+/opt/autolabor/ros/catkin_ws/devel/.private/kinect2_registration/lib/pkgconfig/kinect2_registration.pc /opt/autolabor/ros/catkin_ws/devel/lib/pkgconfig/kinect2_registration.pc

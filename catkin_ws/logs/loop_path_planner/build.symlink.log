@@ -1,0 +1,4 @@
+Symlinking /opt/autolabor/ros/catkin_ws/devel/share/loop_path_planner/cmake/loop_path_plannerConfig.cmake
+Symlinking /opt/autolabor/ros/catkin_ws/devel/share/loop_path_planner/cmake/loop_path_plannerConfig-version.cmake
+Symlinking /opt/autolabor/ros/catkin_ws/devel/lib/libloop_path_planner.so
+Symlinking /opt/autolabor/ros/catkin_ws/devel/lib/pkgconfig/loop_path_planner.pc

@@ -1,0 +1,4 @@
+Symlinking /opt/autolabor/ros/catkin_ws/devel/share/carrot_planner/cmake/carrot_plannerConfig.cmake
+Symlinking /opt/autolabor/ros/catkin_ws/devel/share/carrot_planner/cmake/carrot_plannerConfig-version.cmake
+Symlinking /opt/autolabor/ros/catkin_ws/devel/lib/libcarrot_planner.so
+Symlinking /opt/autolabor/ros/catkin_ws/devel/lib/pkgconfig/carrot_planner.pc

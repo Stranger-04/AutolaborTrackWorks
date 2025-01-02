@@ -1,0 +1,1 @@
+/opt/autolabor/ros/catkin_ws/devel/.private/marvelmind/share/gennodejs/ros/marvelmind/msg/_index.js

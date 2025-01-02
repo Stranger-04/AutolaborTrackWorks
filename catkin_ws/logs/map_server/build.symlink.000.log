@@ -1,0 +1,7 @@
+Symlinking /opt/autolabor/ros/catkin_ws/devel/share/map_server/cmake/map_serverConfig-version.cmake
+Symlinking /opt/autolabor/ros/catkin_ws/devel/share/map_server/cmake/map_serverConfig.cmake
+Symlinking /opt/autolabor/ros/catkin_ws/devel/lib/libmap_server_image_loader.so
+Symlinking /opt/autolabor/ros/catkin_ws/devel/lib/pkgconfig/map_server.pc
+Symlinking /opt/autolabor/ros/catkin_ws/devel/lib/map_server/map_server
+Symlinking /opt/autolabor/ros/catkin_ws/devel/lib/map_server/map_saver
+Symlinking /opt/autolabor/ros/catkin_ws/devel/lib/map_server/rtest

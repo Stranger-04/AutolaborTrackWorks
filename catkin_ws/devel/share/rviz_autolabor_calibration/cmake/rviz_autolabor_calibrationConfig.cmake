@@ -1,0 +1,1 @@
+/opt/autolabor/ros/catkin_ws/devel/.private/rviz_autolabor_calibration/share/rviz_autolabor_calibration/cmake/rviz_autolabor_calibrationConfig.cmake

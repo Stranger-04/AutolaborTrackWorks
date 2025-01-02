@@ -1,0 +1,7 @@
+driver/depth_camera/iai_kinect2-master/kinect2_bridge
+/opt/autolabor/ros/catkin_ws/devel/.private/kinect2_bridge/cmake.lock /opt/autolabor/ros/catkin_ws/devel/./cmake.lock
+/opt/autolabor/ros/catkin_ws/devel/.private/kinect2_bridge/share/kinect2_bridge/cmake/kinect2_bridgeConfig-version.cmake /opt/autolabor/ros/catkin_ws/devel/share/kinect2_bridge/cmake/kinect2_bridgeConfig-version.cmake
+/opt/autolabor/ros/catkin_ws/devel/.private/kinect2_bridge/share/kinect2_bridge/cmake/kinect2_bridgeConfig.cmake /opt/autolabor/ros/catkin_ws/devel/share/kinect2_bridge/cmake/kinect2_bridgeConfig.cmake
+/opt/autolabor/ros/catkin_ws/devel/.private/kinect2_bridge/lib/libkinect2_bridge_nodelet.so /opt/autolabor/ros/catkin_ws/devel/lib/libkinect2_bridge_nodelet.so
+/opt/autolabor/ros/catkin_ws/devel/.private/kinect2_bridge/lib/pkgconfig/kinect2_bridge.pc /opt/autolabor/ros/catkin_ws/devel/lib/pkgconfig/kinect2_bridge.pc
+/opt/autolabor/ros/catkin_ws/devel/.private/kinect2_bridge/lib/kinect2_bridge/kinect2_bridge /opt/autolabor/ros/catkin_ws/devel/lib/kinect2_bridge/kinect2_bridge

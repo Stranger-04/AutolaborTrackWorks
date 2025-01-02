@@ -1,0 +1,4 @@
+Symlinking /opt/autolabor/ros/catkin_ws/devel/share/autolabor_keyboard_control/cmake/autolabor_keyboard_controlConfig.cmake
+Symlinking /opt/autolabor/ros/catkin_ws/devel/share/autolabor_keyboard_control/cmake/autolabor_keyboard_controlConfig-version.cmake
+Symlinking /opt/autolabor/ros/catkin_ws/devel/lib/autolabor_keyboard_control/keyboard_control_node
+Symlinking /opt/autolabor/ros/catkin_ws/devel/lib/pkgconfig/autolabor_keyboard_control.pc

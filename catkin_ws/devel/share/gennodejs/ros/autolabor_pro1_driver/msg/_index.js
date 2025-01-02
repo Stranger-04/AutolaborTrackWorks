@@ -1,0 +1,1 @@
+/opt/autolabor/ros/catkin_ws/devel/.private/autolabor_pro1_driver/share/gennodejs/ros/autolabor_pro1_driver/msg/_index.js

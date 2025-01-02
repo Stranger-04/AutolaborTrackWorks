@@ -1,0 +1,5 @@
+Symlinking /opt/autolabor/ros/catkin_ws/devel/share/rplidar_ros/cmake/rplidar_rosConfig-version.cmake
+Symlinking /opt/autolabor/ros/catkin_ws/devel/share/rplidar_ros/cmake/rplidar_rosConfig.cmake
+Symlinking /opt/autolabor/ros/catkin_ws/devel/lib/pkgconfig/rplidar_ros.pc
+Symlinking /opt/autolabor/ros/catkin_ws/devel/lib/rplidar_ros/rplidarNodeClient
+Symlinking /opt/autolabor/ros/catkin_ws/devel/lib/rplidar_ros/rplidarNode

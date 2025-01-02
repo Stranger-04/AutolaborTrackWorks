@@ -1,0 +1,12 @@
+Symlinking /opt/autolabor/ros/catkin_ws/devel/include/stereo_image_proc/DisparityConfig.h
+Symlinking /opt/autolabor/ros/catkin_ws/devel/share/stereo_image_proc/cmake/stereo_image_procConfig-version.cmake
+Symlinking /opt/autolabor/ros/catkin_ws/devel/share/stereo_image_proc/cmake/stereo_image_procConfig.cmake
+Symlinking /opt/autolabor/ros/catkin_ws/devel/share/stereo_image_proc/docs/DisparityConfig-usage.dox
+Symlinking /opt/autolabor/ros/catkin_ws/devel/share/stereo_image_proc/docs/DisparityConfig.wikidoc
+Symlinking /opt/autolabor/ros/catkin_ws/devel/share/stereo_image_proc/docs/DisparityConfig.dox
+Symlinking /opt/autolabor/ros/catkin_ws/devel/lib/libstereo_image_proc.so
+Symlinking /opt/autolabor/ros/catkin_ws/devel/lib/stereo_image_proc/stereo_image_proc
+Symlinking /opt/autolabor/ros/catkin_ws/devel/lib/python2.7/dist-packages/stereo_image_proc/__init__.py
+Symlinking /opt/autolabor/ros/catkin_ws/devel/lib/python2.7/dist-packages/stereo_image_proc/cfg/DisparityConfig.py
+Symlinking /opt/autolabor/ros/catkin_ws/devel/lib/python2.7/dist-packages/stereo_image_proc/cfg/__init__.py
+Symlinking /opt/autolabor/ros/catkin_ws/devel/lib/pkgconfig/stereo_image_proc.pc

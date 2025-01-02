@@ -1,0 +1,7 @@
+simulation/autolabor_simulation_object
+/opt/autolabor/ros/catkin_ws/devel/.private/autolabor_simulation_object/cmake.lock /opt/autolabor/ros/catkin_ws/devel/./cmake.lock
+/opt/autolabor/ros/catkin_ws/devel/.private/autolabor_simulation_object/share/autolabor_simulation_object/cmake/autolabor_simulation_objectConfig.cmake /opt/autolabor/ros/catkin_ws/devel/share/autolabor_simulation_object/cmake/autolabor_simulation_objectConfig.cmake
+/opt/autolabor/ros/catkin_ws/devel/.private/autolabor_simulation_object/share/autolabor_simulation_object/cmake/autolabor_simulation_objectConfig-version.cmake /opt/autolabor/ros/catkin_ws/devel/share/autolabor_simulation_object/cmake/autolabor_simulation_objectConfig-version.cmake
+/opt/autolabor/ros/catkin_ws/devel/.private/autolabor_simulation_object/lib/autolabor_simulation_object/simulation_object_node /opt/autolabor/ros/catkin_ws/devel/lib/autolabor_simulation_object/simulation_object_node
+/opt/autolabor/ros/catkin_ws/devel/.private/autolabor_simulation_object/lib/autolabor_simulation_object/simulation_object_bind_node /opt/autolabor/ros/catkin_ws/devel/lib/autolabor_simulation_object/simulation_object_bind_node
+/opt/autolabor/ros/catkin_ws/devel/.private/autolabor_simulation_object/lib/pkgconfig/autolabor_simulation_object.pc /opt/autolabor/ros/catkin_ws/devel/lib/pkgconfig/autolabor_simulation_object.pc

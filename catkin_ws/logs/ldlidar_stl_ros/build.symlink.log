@@ -1,0 +1,5 @@
+Symlinking /opt/autolabor/ros/catkin_ws/devel/share/ldlidar_stl_ros/cmake/ldlidar_stl_rosConfig.cmake
+Symlinking /opt/autolabor/ros/catkin_ws/devel/share/ldlidar_stl_ros/cmake/ldlidar_stl_rosConfig-version.cmake
+Symlinking /opt/autolabor/ros/catkin_ws/devel/lib/pkgconfig/ldlidar_stl_ros.pc
+Symlinking /opt/autolabor/ros/catkin_ws/devel/lib/ldlidar_stl_ros/ldlidar_stl_ros_node
+Symlinking /opt/autolabor/ros/catkin_ws/devel/lib/ldlidar_stl_ros/ldlidar_stl_ros_listen_node

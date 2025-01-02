@@ -1,0 +1,3 @@
+Symlinking /opt/autolabor/ros/catkin_ws/devel/share/autolabor_test_launch/cmake/autolabor_test_launchConfig-version.cmake
+Symlinking /opt/autolabor/ros/catkin_ws/devel/share/autolabor_test_launch/cmake/autolabor_test_launchConfig.cmake
+Symlinking /opt/autolabor/ros/catkin_ws/devel/lib/pkgconfig/autolabor_test_launch.pc

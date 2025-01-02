@@ -1,0 +1,4 @@
+Symlinking /opt/autolabor/ros/catkin_ws/devel/share/ps3joy/cmake/ps3joyConfig-version.cmake
+Symlinking /opt/autolabor/ros/catkin_ws/devel/share/ps3joy/cmake/ps3joyConfig.cmake
+Symlinking /opt/autolabor/ros/catkin_ws/devel/lib/ps3joy/sixpair
+Symlinking /opt/autolabor/ros/catkin_ws/devel/lib/pkgconfig/ps3joy.pc

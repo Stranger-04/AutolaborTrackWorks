@@ -1,0 +1,4 @@
+Symlinking /opt/autolabor/ros/catkin_ws/devel/share/depth_image_proc/cmake/depth_image_procConfig-version.cmake
+Symlinking /opt/autolabor/ros/catkin_ws/devel/share/depth_image_proc/cmake/depth_image_procConfig.cmake
+Symlinking /opt/autolabor/ros/catkin_ws/devel/lib/libdepth_image_proc.so
+Symlinking /opt/autolabor/ros/catkin_ws/devel/lib/pkgconfig/depth_image_proc.pc

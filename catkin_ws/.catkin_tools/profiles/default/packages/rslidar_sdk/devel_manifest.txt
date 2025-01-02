@@ -1,0 +1,6 @@
+driver/lidar/rslidar_sdk
+/opt/autolabor/ros/catkin_ws/devel/.private/rslidar_sdk/cmake.lock /opt/autolabor/ros/catkin_ws/devel/./cmake.lock
+/opt/autolabor/ros/catkin_ws/devel/.private/rslidar_sdk/share/rslidar_sdk/cmake/rslidar_sdkConfig.cmake /opt/autolabor/ros/catkin_ws/devel/share/rslidar_sdk/cmake/rslidar_sdkConfig.cmake
+/opt/autolabor/ros/catkin_ws/devel/.private/rslidar_sdk/share/rslidar_sdk/cmake/rslidar_sdkConfig-version.cmake /opt/autolabor/ros/catkin_ws/devel/share/rslidar_sdk/cmake/rslidar_sdkConfig-version.cmake
+/opt/autolabor/ros/catkin_ws/devel/.private/rslidar_sdk/lib/pkgconfig/rslidar_sdk.pc /opt/autolabor/ros/catkin_ws/devel/lib/pkgconfig/rslidar_sdk.pc
+/opt/autolabor/ros/catkin_ws/devel/.private/rslidar_sdk/lib/rslidar_sdk/rslidar_sdk_node /opt/autolabor/ros/catkin_ws/devel/lib/rslidar_sdk/rslidar_sdk_node

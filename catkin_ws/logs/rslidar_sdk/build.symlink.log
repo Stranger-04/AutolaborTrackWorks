@@ -1,0 +1,4 @@
+Symlinking /opt/autolabor/ros/catkin_ws/devel/share/rslidar_sdk/cmake/rslidar_sdkConfig.cmake
+Symlinking /opt/autolabor/ros/catkin_ws/devel/share/rslidar_sdk/cmake/rslidar_sdkConfig-version.cmake
+Symlinking /opt/autolabor/ros/catkin_ws/devel/lib/pkgconfig/rslidar_sdk.pc
+Symlinking /opt/autolabor/ros/catkin_ws/devel/lib/rslidar_sdk/rslidar_sdk_node

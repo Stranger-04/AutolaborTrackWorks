@@ -1,0 +1,4 @@
+Symlinking /opt/autolabor/ros/catkin_ws/devel/share/wr_fslidar/cmake/wr_fslidarConfig.cmake
+Symlinking /opt/autolabor/ros/catkin_ws/devel/share/wr_fslidar/cmake/wr_fslidarConfig-version.cmake
+Symlinking /opt/autolabor/ros/catkin_ws/devel/lib/wr_fslidar/fslidar_node
+Symlinking /opt/autolabor/ros/catkin_ws/devel/lib/pkgconfig/wr_fslidar.pc

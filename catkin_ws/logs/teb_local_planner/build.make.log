@@ -1,0 +1,59 @@
+[  0%] Built target geometry_msgs_generate_messages_eus
+[  0%] Built target costmap_converter_generate_messages_py
+[  0%] Built target std_msgs_generate_messages_lisp
+[  0%] Built target costmap_converter_generate_messages_cpp
+[  0%] Built target std_msgs_generate_messages_eus
+[  0%] Built target costmap_converter_generate_messages_eus
+[  0%] Built target std_msgs_generate_messages_nodejs
+[  0%] Built target geometry_msgs_generate_messages_lisp
+[  0%] Built target costmap_converter_generate_messages_nodejs
+[  0%] Built target std_msgs_generate_messages_cpp
+[  0%] Built target costmap_converter_generate_messages_lisp
+[  0%] Built target geometry_msgs_generate_messages_cpp
+[  0%] Built target geometry_msgs_generate_messages_nodejs
+[  0%] Built target geometry_msgs_generate_messages_py
+[  0%] Built target std_msgs_generate_messages_py
+[  3%] [34m[1mGenerating dynamic reconfigure files from cfg/TebLocalPlannerReconfigure.cfg: /opt/autolabor/ros/catkin_ws/devel/.private/teb_local_planner/include/teb_local_planner/TebLocalPlannerReconfigureConfig.h /opt/autolabor/ros/catkin_ws/devel/.private/teb_local_planner/lib/python2.7/dist-packages/teb_local_planner/cfg/TebLocalPlannerReconfigureConfig.py[0m
+[  3%] Built target _teb_local_planner_generate_messages_check_deps_TrajectoryMsg
+[  3%] Built target _teb_local_planner_generate_messages_check_deps_FeedbackMsg
+[  3%] Built target _teb_local_planner_generate_messages_check_deps_TrajectoryPointMsg
+[  6%] [34m[1mGenerating Python from MSG teb_local_planner/TrajectoryPointMsg[0m
+[ 13%] [34m[1mGenerating Javascript code from teb_local_planner/TrajectoryPointMsg.msg[0m
+[ 13%] [34m[1mGenerating C++ code from teb_local_planner/TrajectoryPointMsg.msg[0m
+[ 16%] [34m[1mGenerating Python from MSG teb_local_planner/TrajectoryMsg[0m
+[ 20%] [34m[1mGenerating C++ code from teb_local_planner/TrajectoryMsg.msg[0m
+[ 23%] [34m[1mGenerating Javascript code from teb_local_planner/FeedbackMsg.msg[0m
+[ 30%] [34m[1mGenerating C++ code from teb_local_planner/FeedbackMsg.msg[0m
+[ 30%] [34m[1mGenerating Javascript code from teb_local_planner/TrajectoryMsg.msg[0m
+[ 33%] [34m[1mGenerating Python from MSG teb_local_planner/FeedbackMsg[0m
+[ 36%] [34m[1mGenerating Lisp code from teb_local_planner/FeedbackMsg.msg[0m
+[ 40%] [34m[1mGenerating Lisp code from teb_local_planner/TrajectoryMsg.msg[0m
+[ 43%] [34m[1mGenerating EusLisp code from teb_local_planner/TrajectoryMsg.msg[0m
+[ 46%] [34m[1mGenerating EusLisp manifest code for teb_local_planner[0m
+[ 50%] [34m[1mGenerating Lisp code from teb_local_planner/TrajectoryPointMsg.msg[0m
+[ 53%] [34m[1mGenerating EusLisp code from teb_local_planner/TrajectoryPointMsg.msg[0m
+[ 56%] [34m[1mGenerating EusLisp code from teb_local_planner/FeedbackMsg.msg[0m
+Generating reconfiguration files for TebLocalPlannerReconfigure in teb_local_planner
+Wrote header file in /opt/autolabor/ros/catkin_ws/devel/.private/teb_local_planner/include/teb_local_planner/TebLocalPlannerReconfigureConfig.h
+[ 56%] Built target teb_local_planner_generate_messages_nodejs
+[ 56%] Built target teb_local_planner_gencfg
+[ 56%] Built target teb_local_planner_generate_messages_lisp
+[ 56%] Built target teb_local_planner_generate_messages_cpp
+[ 60%] [32mBuilding CXX object CMakeFiles/teb_local_planner.dir/src/optimal_planner.cpp.o[0m
+[ 63%] [32mBuilding CXX object CMakeFiles/teb_local_planner.dir/src/timed_elastic_band.cpp.o[0m
+[ 70%] [32mBuilding CXX object CMakeFiles/teb_local_planner.dir/src/obstacles.cpp.o[0m
+[ 70%] [32mBuilding CXX object CMakeFiles/teb_local_planner.dir/src/teb_config.cpp.o[0m
+[ 73%] [32mBuilding CXX object CMakeFiles/teb_local_planner.dir/src/homotopy_class_planner.cpp.o[0m
+[ 76%] [32mBuilding CXX object CMakeFiles/teb_local_planner.dir/src/recovery_behaviors.cpp.o[0m
+[ 80%] [32mBuilding CXX object CMakeFiles/teb_local_planner.dir/src/teb_local_planner_ros.cpp.o[0m
+[ 83%] [32mBuilding CXX object CMakeFiles/teb_local_planner.dir/src/graph_search.cpp.o[0m
+[ 86%] [32mBuilding CXX object CMakeFiles/teb_local_planner.dir/src/visualization.cpp.o[0m
+[ 90%] [34m[1mGenerating Python msg __init__.py for teb_local_planner[0m
+[ 90%] Built target teb_local_planner_generate_messages_py
+[ 90%] Built target teb_local_planner_generate_messages_eus
+[ 90%] Built target teb_local_planner_generate_messages
+[ 93%] [32m[1mLinking CXX shared library /opt/autolabor/ros/catkin_ws/devel/.private/teb_local_planner/lib/libteb_local_planner.so[0m
+[ 93%] Built target teb_local_planner
+[ 96%] [32mBuilding CXX object CMakeFiles/test_optim_node.dir/src/test_optim_node.cpp.o[0m
+[100%] [32m[1mLinking CXX executable /opt/autolabor/ros/catkin_ws/devel/.private/teb_local_planner/lib/teb_local_planner/test_optim_node[0m
+[100%] Built target test_optim_node

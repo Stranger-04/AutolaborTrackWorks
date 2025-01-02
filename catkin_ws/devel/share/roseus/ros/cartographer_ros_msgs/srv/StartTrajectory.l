@@ -1,0 +1,1 @@
+/opt/autolabor/ros/catkin_ws/devel/.private/cartographer_ros_msgs/share/roseus/ros/cartographer_ros_msgs/srv/StartTrajectory.l
