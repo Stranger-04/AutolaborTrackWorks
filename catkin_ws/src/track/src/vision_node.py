@@ -79,59 +79,61 @@ class image_listenner:
         self.angular_z = 0.10
         self.track_windows_threshold = math.sqrt(95*95+235*235)+10000
         self.bridge = cv_bridge.CvBridge()
-        #cv2.namedWindow("imshow", cv2.WINDOW_NORMAL)
+        self.target_distance = 1.0  # 期望保持的距离(米)
+        self.distance_threshold = 0.2  # 距离误差阈值
+        
+        # 添加深度图像订阅
         self.image_sub = rospy.Subscriber("/usb_cam/image_raw", Image, self.image_sub_callback)
-        self.twist_pub = rospy.Publisher("/cmd_vel",Twist,queue_size=10)
-        #self.chatter_pub = rospy.Publisher("chatter",)
-# srack_windows x:640,y:480
+        self.depth_sub = rospy.Subscriber("/camera/depth/image_raw", Image, self.depth_callback)
+        self.twist_pub = rospy.Publisher("/cmd_vel", Twist, queue_size=10)
+        
+        self.current_depth = 0
+        
+    def depth_callback(self, msg):
+        try:
+            depth_image = self.bridge.imgmsg_to_cv2(msg, "32FC1")
+            # 获取跟踪窗口中心点的深度值
+            if trackObject == 1:
+                x, y = int(track_window[0] + track_window[2]/2), int(track_window[1] + track_window[3]/2)
+                self.current_depth = depth_image[y, x]
+                if math.isnan(self.current_depth):
+                    self.current_depth = 0
+        except:
+            rospy.logerr("depth image processing failed")
+
     def image_sub_callback(self, msg):
         ''' callback of image_sub '''
         global image
-
-        # self.img = self.bridge.imgmsg_to_cv2(msg, "bgr8")
-        # image = self.img
-        # track_centerX, length_of_diogonal = ExamByCamshift()
-        # windows_centenX = 320
-        # if track_centerX >= 0:
-        #     if math.fabs(track_centerX-windows_centenX) > self.threshold:
-        #         if track_centerX < windows_centenX:
-        #             self.turn_right()
-        #         if track_centerX > windows_centenX:
-        #             self.turn_left()
-        #     else:
-        #         if length_of_diogonal < self.track_windows_threshold:
-        #             self.go_ahead()
-        #         else:
-        #             self.stop_move()
-        # else:
-        #     rospy.loginfo ("wait for select area")
-        # cv2.setMouseCallback('imshow', onMouse)
-        # cv2.waitKey(3)
-
 
         try:
             self.img = self.bridge.imgmsg_to_cv2(msg, "bgr8")
             image = self.img
             track_centerX, length_of_diagonal = ExamByCamshift()
             windows_centenX = 320
+            
             if track_centerX >= 0:
+                # 方向控制
                 if math.fabs(track_centerX-windows_centenX) > self.threshold:
                     if track_centerX < windows_centenX:
                         self.turn_right()
                     if track_centerX > windows_centenX:
                         self.turn_left()
                 else:
-                    if length_of_diagonal < self.track_windows_threshold:
-                        self.go_ahead()
-                    else:
-                        self.stop_move()
+                    # 距离控制
+                    if self.current_depth > 0:
+                        if self.current_depth > self.target_distance + self.distance_threshold:
+                            self.go_ahead()
+                        elif self.current_depth < self.target_distance - self.distance_threshold:
+                            self.go_back()
+                        else:
+                            self.stop_move()
             else:
-                rospy.loginfo ("wait for select area")
+                rospy.loginfo("wait for select area")
+                
             cv2.setMouseCallback('imshow', onMouse)
             cv2.waitKey(3)
         except:
             rospy.logerr("img get failed")
-
 
 
     def turn_left(self):
@@ -152,6 +154,11 @@ class image_listenner:
         rospy.loginfo("moving ahead")
         msg = Twist()
         msg.linear.x = -self.linear_x
+        self.twist_pub.publish(msg)
+    def go_back(self):
+        rospy.loginfo("moving back")
+        msg = Twist()
+        msg.linear.x = self.linear_x
         self.twist_pub.publish(msg)
 
 def callback(twist):
