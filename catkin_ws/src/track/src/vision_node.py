@@ -74,21 +74,60 @@ def ExamByCamshift():
 
 class image_listenner:
     def __init__(self):
-        self.threshold = 120
-        self.linear_x = 0.4
-        self.angular_z = 0.10
+        # 基本参数设置
+        self.threshold = 80  # 降低阈值提高灵敏度
+        self.linear_x = 0.3  # 降低速度使运动更平滑
+        self.angular_z = 0.15
         self.track_windows_threshold = math.sqrt(95*95+235*235)+10000
-        self.bridge = cv_bridge.CvBridge()
-        self.target_distance = 1.0  # 期望保持的距离(米)
-        self.distance_threshold = 0.2  # 距离误差阈值
+        self.target_distance = 1.2  # 增加跟随距离
+        self.distance_threshold = 0.2
+        self.prev_centerX = 320  # 添加目标位置历史记录
+        self.smooth_factor = 0.3  # 平滑因子
         
-        # 添加深度图像订阅
+        # 初始化bridge和订阅器
+        self.bridge = cv_bridge.CvBridge()
         self.image_sub = rospy.Subscriber("/usb_cam/image_raw", Image, self.image_sub_callback)
         self.depth_sub = rospy.Subscriber("/camera/depth/image_raw", Image, self.depth_callback)
         self.twist_pub = rospy.Publisher("/cmd_vel", Twist, queue_size=10)
         
         self.current_depth = 0
+        self.start_auto_detect()  # 添加自动检测启动
+
+    def start_auto_detect(self):
+        """自动开始目标检测"""
+        global trackObject, xs, ys, ws, hs
+        # 设置初始检测窗口在图像中心
+        rospy.sleep(2)  # 等待图像稳定
+        xs, ys = 220, 180  # 设置初始检测窗口位置
+        ws, hs = 200, 150  # 设置初始检测窗口大小
+        trackObject = -1   # 触发跟踪初始化
+
+    def predict_target_position(self, current_x):
+        """预测目标位置"""
+        predicted_x = current_x + (current_x - self.prev_centerX) * self.smooth_factor
+        self.prev_centerX = current_x
+        return predicted_x
+
+    def calculate_control(self, target_x, depth):
+        """计算更平滑的控制输出"""
+        msg = Twist()
+        windows_centerX = 320
         
+        # 方向控制
+        error_x = target_x - windows_centerX
+        msg.angular.z = self.angular_z * (error_x / windows_centerX)
+        
+        # 速度控制
+        if depth > 0:
+            error_distance = depth - self.target_distance
+            speed_factor = min(abs(error_distance), 1.0)
+            if error_distance > self.distance_threshold:
+                msg.linear.x = -self.linear_x * speed_factor
+            elif error_distance < -self.distance_threshold:
+                msg.linear.x = self.linear_x * speed_factor
+        
+        return msg
+
     def depth_callback(self, msg):
         try:
             depth_image = self.bridge.imgmsg_to_cv2(msg, "32FC1")
@@ -109,26 +148,14 @@ class image_listenner:
             self.img = self.bridge.imgmsg_to_cv2(msg, "bgr8")
             image = self.img
             track_centerX, length_of_diagonal = ExamByCamshift()
-            windows_centenX = 320
             
             if track_centerX >= 0:
-                # 方向控制
-                if math.fabs(track_centerX-windows_centenX) > self.threshold:
-                    if track_centerX < windows_centenX:
-                        self.turn_right()
-                    if track_centerX > windows_centenX:
-                        self.turn_left()
-                else:
-                    # 距离控制
-                    if self.current_depth > 0:
-                        if self.current_depth > self.target_distance + self.distance_threshold:
-                            self.go_ahead()
-                        elif self.current_depth < self.target_distance - self.distance_threshold:
-                            self.go_back()
-                        else:
-                            self.stop_move()
+                # 使用预测位置进行控制
+                predicted_x = self.predict_target_position(track_centerX)
+                control_msg = self.calculate_control(predicted_x, self.current_depth)
+                self.twist_pub.publish(control_msg)
             else:
-                rospy.loginfo("wait for select area")
+                rospy.loginfo("Finding target...")
                 
             cv2.setMouseCallback('imshow', onMouse)
             cv2.waitKey(3)
