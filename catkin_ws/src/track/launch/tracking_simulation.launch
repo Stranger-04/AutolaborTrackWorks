@@ -11,7 +11,7 @@
 
     <!-- 目标车辆 -->
     <group ns="target_car">
-        <param name="robot_description" command="$(find xacro)/xacro --inorder '$(find autolabor_description)/urdf/autolabor_pro1.urdf'" />
+        <param name="robot_description" command="$(find xacro)/xacro '$(find track)/urdf/autolabor_mini.urdf.xacro'" />
         <node name="spawn_urdf" pkg="gazebo_ros" type="spawn_model" 
             args="-param robot_description -urdf -model target_car 
                   -x 0.0 -y 0.0 -z 0.0 -Y 0.0" />
@@ -22,7 +22,7 @@
 
     <!-- 跟踪车辆 -->
     <group ns="track_car">
-        <param name="robot_description" command="$(find xacro)/xacro --inorder '$(find autolabor_description)/urdf/autolabor_pro1.urdf'" />
+        <param name="robot_description" command="$(find xacro)/xacro '$(find track)/urdf/autolabor_mini.urdf.xacro'" />
         <node name="spawn_urdf" pkg="gazebo_ros" type="spawn_model" 
             args="-param robot_description -urdf -model track_car 
                   -x -2.0 -y 0.0 -z 0.0 -Y 0.0" />
