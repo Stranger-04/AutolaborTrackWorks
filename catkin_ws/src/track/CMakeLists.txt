@@ -9,7 +9,7 @@ find_package(catkin REQUIRED COMPONENTS
 )
 
 catkin_package(
-  CATKIN_DEPENDS roscpp geometry_msgs nav_msgs
+  CATKIN_DEPENDS roscpp geometry_msgs nav_msgs gazebo_ros
 )
 
 include_directories(
@@ -18,8 +18,12 @@ include_directories(
 )
 
 add_executable(tracking_node src/tracking_node.cpp)
-target_link_libraries(tracking_node ${catkin_LIBRARIES})
-
-# 添加键盘控制节点
 add_executable(keyboard_control src/keyboard_control.cpp)
-target_link_libraries(keyboard_control ${catkin_LIBRARIES})
+
+target_link_libraries(tracking_node
+  ${catkin_LIBRARIES}
+)
+
+target_link_libraries(keyboard_control
+  ${catkin_LIBRARIES}
+)

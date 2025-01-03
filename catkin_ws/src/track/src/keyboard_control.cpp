@@ -1,6 +1,5 @@
 #include <ros/ros.h>
 #include <geometry_msgs/Twist.h>
-#include <std_msgs/Bool.h>
 #include <termios.h>
 #include <stdio.h>
 
@@ -8,81 +7,70 @@ class KeyboardControl {
 private:
     ros::NodeHandle nh_;
     ros::Publisher cmd_vel_pub_;
-    ros::Publisher control_mode_pub_;
     
-    double linear_vel_;
-    double angular_vel_;
-    bool auto_mode_;
+    double linear_speed_ = 0.5;
+    double angular_speed_ = 1.0;
 
 public:
-    KeyboardControl() : linear_vel_(0.5), angular_vel_(1.0), auto_mode_(true) {
-        cmd_vel_pub_ = nh_.advertise<geometry_msgs::Twist>("/cmd_vel", 1);
-        control_mode_pub_ = nh_.advertise<std_msgs::Bool>("/control_mode", 1);
-        
+    KeyboardControl() {
+        cmd_vel_pub_ = nh_.advertise<geometry_msgs::Twist>("cmd_vel", 10);
+        printInstruction();
+    }
+
+    void printInstruction() {
         ROS_INFO("Keyboard Control:");
         ROS_INFO("------------------");
-        ROS_INFO("w/s : 前进/后退");
-        ROS_INFO("a/d : 左转/右转");
-        ROS_INFO("空格 : 紧急停止");
-        ROS_INFO("m : 切换手动/自动模式");
-        ROS_INFO("q : 退出");
+        ROS_INFO("w : Forward");
+        ROS_INFO("s : Backward");
+        ROS_INFO("a : Turn Left");
+        ROS_INFO("d : Turn Right");
+        ROS_INFO("space : Stop");
+        ROS_INFO("q : Quit");
     }
 
-    int getch() {
-        static struct termios oldt, newt;
-        tcgetattr(STDIN_FILENO, &oldt);
-        newt = oldt;
+    char getKey() {
+        struct termios old = {0};
+        tcgetattr(0, &old);
+        struct termios newt = old;
         newt.c_lflag &= ~(ICANON | ECHO);
-        tcsetattr(STDIN_FILENO, TCSANOW, &newt);
-        int c = getchar();
-        tcsetattr(STDIN_FILENO, TCSANOW, &oldt);
+        tcsetattr(0, TCSANOW, &newt);
+        char c = getchar();
+        tcsetattr(0, TCSANOW, &old);
         return c;
-    }
-
-    void publishControlMode() {
-        std_msgs::Bool mode_msg;
-        mode_msg.data = auto_mode_;
-        control_mode_pub_.publish(mode_msg);
     }
 
     void run() {
         char key;
-        while(ros::ok()) {
-            key = getch();
-            geometry_msgs::Twist twist;
+        geometry_msgs::Twist twist;
+
+        while (ros::ok()) {
+            key = getKey();
+            twist.linear.x = 0;
+            twist.angular.z = 0;
 
             switch(key) {
                 case 'w':
-                    twist.linear.x = linear_vel_;
+                    twist.linear.x = linear_speed_;
                     break;
                 case 's':
-                    twist.linear.x = -linear_vel_;
+                    twist.linear.x = -linear_speed_;
                     break;
                 case 'a':
-                    twist.angular.z = angular_vel_;
+                    twist.angular.z = angular_speed_;
                     break;
                 case 'd':
-                    twist.angular.z = -angular_vel_;
+                    twist.angular.z = -angular_speed_;
                     break;
                 case ' ':
                     twist.linear.x = 0;
                     twist.angular.z = 0;
                     break;
-                case 'm':
-                    auto_mode_ = !auto_mode_;
-                    ROS_INFO("%s模式", auto_mode_ ? "自动" : "手动");
-                    publishControlMode();
-                    continue;
                 case 'q':
-                    ROS_INFO("退出键盘控制");
+                    ROS_INFO("Quit");
                     return;
-                default:
-                    continue;
             }
-
-            if (!auto_mode_) {
-                cmd_vel_pub_.publish(twist);
-            }
+            cmd_vel_pub_.publish(twist);
+            ros::spinOnce();
         }
     }
 };
