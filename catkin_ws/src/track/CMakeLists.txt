@@ -5,7 +5,6 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   geometry_msgs
   nav_msgs
-  autolabor_pro1_driver
   gazebo_ros
 )
 

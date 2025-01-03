@@ -10,5 +10,5 @@
   <depend>roscpp</depend>
   <depend>geometry_msgs</depend>
   <depend>nav_msgs</depend>
-  <depend>gazebo_ros</depend>             <!-- 只保留仿真依赖 -->
+  <depend>gazebo_ros</depend>
 </package>
