@@ -6,19 +6,19 @@
     </include>
 
     <!-- 键盘控制节点 -->
-    <node name="keyboard_control" pkg="track" type="keyboard_control" output="screen">
-        <remap from="cmd_vel" to="/target_car/cmd_vel"/>
+    <node name="keyboard_control" pkg="track" type="keyboard_control" output="screen" ns="target_car">
+        <remap from="cmd_vel" to="cmd_vel"/>
     </node>
 
     <!-- 跟踪节点 -->
-    <node name="tracking_node" pkg="track" type="tracking_node" output="screen">
+    <node name="tracking_node" pkg="track" type="tracking_node" output="screen" ns="track_car">
         <param name="max_linear_speed" value="0.5"/>
         <param name="max_angular_speed" value="1.0"/>
         <param name="min_distance" value="0.5"/>
         <param name="desired_distance" value="1.0"/>
-        <remap from="cmd_vel" to="/track_car/cmd_vel"/>
+        <remap from="cmd_vel" to="cmd_vel"/>
         <remap from="target/odom" to="/target_car/odom"/>
-        <remap from="odom" to="/track_car/odom"/>
+        <remap from="odom" to="odom"/>
     </node>
 
     <!-- 添加robot_state_publisher -->
@@ -28,15 +28,20 @@
     <!-- RViz可视化 -->
     <node name="track_rviz" pkg="rviz" type="rviz" args="-d $(find track)/rviz/tracking.rviz"/>
 
-    <!-- 加载相机配置 -->
-    <param name="robot_description" command="$(find xacro)/xacro $(find track)/urdf/car.urdf.xacro" />
-    
-    <!-- 启动相机节点 -->
+    <!-- 修改相机配置 -->
+    <group ns="target_car">
+        <param name="robot_description" command="$(find xacro)/xacro $(find track)/urdf/car.urdf.xacro" />
+    </group>
+    <group ns="track_car">
+        <param name="robot_description" command="$(find xacro)/xacro $(find track)/urdf/car.urdf.xacro" />
+    </group>
+
+    <!-- 相机话题重映射 -->
     <node name="camera_relay" pkg="topic_tools" type="relay"
-          args="/track_car/camera/image_raw /usb_cam/image_raw" />
+          args="/track_car/camera/image_raw /camera/image_raw" ns="track_car" />
           
-    <!-- 启动视觉跟踪节点 -->
-    <node name="vision_node" pkg="track" type="vision_node.py" output="screen">
-        <remap from="/usb_cam/image_raw" to="/track_car/camera/image_raw"/>
+    <!-- 视觉跟踪节点 -->
+    <node name="vision_node" pkg="track" type="vision_node.py" output="screen" ns="track_car">
+        <remap from="/camera/image_raw" to="camera/image_raw"/>
     </node>
 </launch>

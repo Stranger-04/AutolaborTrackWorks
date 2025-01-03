@@ -1,38 +1,58 @@
 <?xml version="1.0"?>
 <launch>
-    <!-- Gazebo环境变量设置 -->
-    <env name="GAZEBO_MODEL_PATH" value="$(find track)/models:$(optenv GAZEBO_MODEL_PATH)"/>
-    <env name="IGN_IP" value="127.0.0.1"/>
-    <env name="GAZEBO_RESOURCE_PATH" value="$(find track)/worlds:$(optenv GAZEBO_RESOURCE_PATH)"/>
-    <env name="GAZEBO_MODEL_DATABASE_URI" value=""/>
-    <env name="LIBGL_ALWAYS_SOFTWARE" value="1"/>
-    
-    <!-- 加载空白世界 -->
+    <!-- 启动Gazebo仿真环境 -->
     <include file="$(find gazebo_ros)/launch/empty_world.launch">
-        <arg name="world_name" value="$(find track)/worlds/empty.world"/>
+        <arg name="world_name" value="$(find track)/worlds/track.world"/>
+        <arg name="gui" value="true"/>
         <arg name="paused" value="false"/>
         <arg name="use_sim_time" value="true"/>
-        <arg name="gui" value="true"/>
-        <arg name="debug" value="false"/>
-        <arg name="verbose" value="false"/>
     </include>
 
-    <!-- 目标车辆 -->
+    <!-- 加载机器人模型描述 -->
+    <param name="robot_description" 
+           command="$(find xacro)/xacro $(find track)/urdf/car.urdf.xacro" />
+
+    <!-- 生成两辆车 -->
+    <!-- 被跟踪的目标车 -->
     <group ns="target_car">
-        <param name="robot_description" command="$(find xacro)/xacro '$(find track)/urdf/autolabor_mini.urdf.xacro'" />
-        <node name="target_spawn_urdf" pkg="gazebo_ros" type="spawn_model" 
-            args="-param robot_description -urdf -model target_car 
-                  -x 0.0 -y 0.0 -z 0.0 -Y 0.0" />
+        <param name="tf_prefix" value="target_car"/>
+        <include file="$(find gazebo_ros)/launch/spawn_model.launch">
+            <arg name="model_name" value="target_car"/>
+            <arg name="model_urdf" value="$(find track)/urdf/car.urdf.xacro"/>
+            <arg name="x" value="0"/>
+            <arg name="y" value="0"/>
+        </include>
     </group>
 
-    <!-- 跟踪车辆 -->
+    <!-- 跟踪车 -->
     <group ns="track_car">
-        <param name="robot_description" command="$(find xacro)/xacro '$(find track)/urdf/autolabor_mini.urdf.xacro'" />
-        <node name="track_spawn_urdf" pkg="gazebo_ros" type="spawn_model" 
-            args="-param robot_description -urdf -model track_car 
-                  -x -2.0 -y 0.0 -z 0.0 -Y 0.0" />
+        <param name="tf_prefix" value="track_car"/>
+        <include file="$(find gazebo_ros)/launch/spawn_model.launch">
+            <arg name="model_name" value="track_car"/>
+            <arg name="model_urdf" value="$(find track)/urdf/car.urdf.xacro"/>
+            <arg name="x" value="-2"/>
+            <arg name="y" value="0"/>
+        </include>
     </group>
 
-    <!-- 启动跟踪控制节点 -->
-    <include file="$(find track)/launch/tracking.launch" />
+    <!-- 启动视觉跟踪节点 -->
+    <node name="vision_node" pkg="track" type="vision_node.py" output="screen">
+        <remap from="/usb_cam/image_raw" to="/track_car/camera/image_raw"/>
+    </node>
+
+    <!-- 键盘控制节点 -->
+    <node name="teleop_twist_keyboard" pkg="teleop_twist_keyboard" 
+          type="teleop_twist_keyboard.py" output="screen">
+        <remap from="cmd_vel" to="/target_car/cmd_vel"/>
+    </node>
+
+    <!-- 添加robot_state_publisher -->
+    <node name="target_state_publisher" pkg="robot_state_publisher" 
+          type="robot_state_publisher" ns="target_car"/>
+    <node name="track_state_publisher" pkg="robot_state_publisher" 
+          type="robot_state_publisher" ns="track_car"/>
+
+    <!-- RViz可视化 -->
+    <node name="rviz" pkg="rviz" type="rviz" 
+          args="-d $(find track)/rviz/tracking.rviz"/>
 </launch>

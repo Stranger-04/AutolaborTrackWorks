@@ -21,7 +21,7 @@ private:
     bool current_initialized_;
 
 public:
-    TrackingController() : nh_("~") {
+    TrackingController() : nh_("~"), target_initialized_(false), current_initialized_(false) {
         // 加载参数
         nh_.param("max_linear_speed", max_linear_speed_, 0.5);
         nh_.param("max_angular_speed", max_angular_speed_, 1.0);
@@ -29,9 +29,9 @@ public:
         nh_.param("desired_distance", desired_distance_, 1.0);
         
         // 创建发布者和订阅者
-        cmd_vel_pub_ = nh_.advertise<geometry_msgs::Twist>("/cmd_vel", 10);
-        target_odom_sub_ = nh_.subscribe("/target/odom", 10, &TrackingController::targetCallback, this);
-        current_odom_sub_ = nh_.subscribe("/odom", 10, &TrackingController::currentCallback, this);
+        cmd_vel_pub_ = nh_.advertise<geometry_msgs::Twist>("cmd_vel", 10);
+        target_odom_sub_ = nh_.subscribe("/target_car/odom", 10, &TrackingController::targetCallback, this);
+        current_odom_sub_ = nh_.subscribe("odom", 10, &TrackingController::currentCallback, this);
     }
 
     void targetCallback(const nav_msgs::Odometry::ConstPtr& msg) {
@@ -48,6 +48,11 @@ public:
     }
 
     void track() {
+        if (!target_initialized_ || !current_initialized_) {
+            ROS_WARN_THROTTLE(1, "Waiting for odometry data...");
+            return;
+        }
+        
         geometry_msgs::Twist cmd_vel;
 
         // 计算相对位置
