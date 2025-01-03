@@ -28,12 +28,22 @@
     <!-- RViz可视化 -->
     <node name="track_rviz" pkg="rviz" type="rviz" args="-d $(find track)/rviz/tracking.rviz"/>
 
+    <!-- 生成目标车辆模型 -->
+    <node name="spawn_target_car" pkg="gazebo_ros" type="spawn_model"
+          args="-urdf -param /target_car/robot_description -model target_car 
+                -x 0.0 -y 0.0 -z 0.0" />
+
+    <!-- 生成跟踪车辆模型 -->
+    <node name="spawn_track_car" pkg="gazebo_ros" type="spawn_model"
+          args="-urdf -param /track_car/robot_description -model track_car
+                -x -2.0 -y 0.0 -z 0.0" />
+
     <!-- 修改相机配置 -->
     <group ns="target_car">
-        <param name="robot_description" command="$(find xacro)/xacro $(find track)/urdf/car.urdf.xacro" />
+        <param name="robot_description" command="$(find xacro)/xacro --inorder '$(find track)/urdf/car.urdf.xacro'" />
     </group>
     <group ns="track_car">
-        <param name="robot_description" command="$(find xacro)/xacro $(find track)/urdf/car.urdf.xacro" />
+        <param name="robot_description" command="$(find xacro)/xacro --inorder '$(find track)/urdf/car.urdf.xacro'" />
     </group>
 
     <!-- 相机话题重映射 -->
