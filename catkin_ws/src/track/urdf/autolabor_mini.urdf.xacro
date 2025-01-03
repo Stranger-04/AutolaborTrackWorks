@@ -28,6 +28,14 @@
         </inertial>
     </link>
 
+    <!-- Add dummy link -->
+    <link name="dummy_link"/>
+
+    <joint name="dummy_joint" type="fixed">
+        <parent link="dummy_link"/>
+        <child link="base_link"/>
+    </joint>
+
     <!-- Left Wheel -->
     <link name="left_wheel">
         <visual>

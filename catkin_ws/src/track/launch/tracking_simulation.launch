@@ -3,6 +3,8 @@
     <!-- Gazebo环境变量设置 -->
     <env name="GAZEBO_MODEL_PATH" value="$(find track)/models:$(optenv GAZEBO_MODEL_PATH)"/>
     <env name="IGN_IP" value="127.0.0.1"/>
+    <env name="GAZEBO_RESOURCE_PATH" value="$(find track)"/>
+    <env name="LIBGL_ALWAYS_SOFTWARE" value="1"/>
     
     <!-- 加载空白世界 -->
     <include file="$(find gazebo_ros)/launch/empty_world.launch">
@@ -34,4 +36,7 @@
 
     <!-- 启动跟踪控制节点 -->
     <include file="$(find track)/launch/tracking.launch" />
+
+    <!-- 修改RViz启动参数 -->
+    <node name="track_rviz" pkg="rviz" type="rviz" args="-d $(find track)/rviz/tracking_simulation.rviz" respawn="true"/>
 </launch>
