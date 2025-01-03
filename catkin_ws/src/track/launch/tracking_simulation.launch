@@ -1,12 +1,19 @@
 <?xml version="1.0"?>
 <launch>
+    <!-- Gazebo环境变量设置 -->
+    <env name="GAZEBO_MODEL_PATH" value="$(find track)/models:$(optenv GAZEBO_MODEL_PATH)"/>
+    <env name="IGN_IP" value="127.0.0.1"/>
+    
     <!-- 加载空白世界 -->
     <include file="$(find gazebo_ros)/launch/empty_world.launch">
-        <arg name="world_name" value="$(find track)/worlds/track_world.world"/>
+        <arg name="world_name" value="$(find track)/worlds/empty.world"/>
         <arg name="paused" value="false"/>
         <arg name="use_sim_time" value="true"/>
         <arg name="gui" value="true"/>
         <arg name="debug" value="false"/>
+        <!-- VMware环境下的图形设置 -->
+        <arg name="verbose" value="true"/>
+        <env name="LIBGL_ALWAYS_SOFTWARE" value="1"/>
     </include>
 
     <!-- 目标车辆 -->
