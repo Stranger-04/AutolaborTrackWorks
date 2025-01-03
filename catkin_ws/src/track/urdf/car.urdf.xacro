@@ -1,0 +1,38 @@
+<?xml version="1.0"?>
+<robot name="car" xmlns:xacro="http://www.ros.org/wiki/xacro">
+    <!-- ...existing code... -->
+    
+    <!-- 修改材质颜色 -->
+    <material name="yellow">
+        <color rgba="1 1 0 1"/>
+    </material>
+    
+    <material name="green">
+        <color rgba="0 1 0 1"/>
+    </material>
+
+    <!-- 车身部分 -->
+    <link name="base_link">
+        <visual>
+            <geometry>
+                <box size="0.5 0.3 0.1"/>
+            </geometry>
+            <material name="yellow"/>
+        </visual>
+        <!-- ...existing code... -->
+    </link>
+
+    <!-- 车轮部分 -->
+    <link name="wheel_1">
+        <visual>
+            <geometry>
+                <cylinder radius="0.06" length="0.04"/>
+            </geometry>
+            <material name="green"/>
+        </visual>
+        <!-- ...existing code... -->
+    </link>
+    
+    <!-- 其他车轮同样修改为绿色 -->
+    <!-- ...existing code... -->
+</robot>

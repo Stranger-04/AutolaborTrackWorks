@@ -84,6 +84,11 @@ class image_listenner:
         self.prev_centerX = 320  # 添加目标位置历史记录
         self.smooth_factor = 0.3  # 平滑因子
         
+        # 创建并初始化窗口
+        cv2.namedWindow('imshow')
+        cv2.setMouseCallback('imshow', onMouse)
+        rospy.loginfo("等待图像加载...")
+        
         # 初始化bridge和订阅器
         self.bridge = cv_bridge.CvBridge()
         self.image_sub = rospy.Subscriber("/usb_cam/image_raw", Image, self.image_sub_callback)
@@ -91,16 +96,21 @@ class image_listenner:
         self.twist_pub = rospy.Publisher("/cmd_vel", Twist, queue_size=10)
         
         self.current_depth = 0
-        self.start_auto_detect()  # 添加自动检测启动
+        self.window_created = False
+        self.start_auto_detect()
 
     def start_auto_detect(self):
         """自动开始目标检测"""
         global trackObject, xs, ys, ws, hs
-        # 设置初始检测窗口在图像中心
         rospy.sleep(2)  # 等待图像稳定
-        xs, ys = 220, 180  # 设置初始检测窗口位置
-        ws, hs = 200, 150  # 设置初始检测窗口大小
-        trackObject = -1   # 触发跟踪初始化
+        
+        # 在图像中心设置初始检测窗口
+        xs, ys = 220, 180
+        ws, hs = 200, 150
+        trackObject = -1
+        
+        rospy.loginfo("目标检测窗口已启动")
+        rospy.loginfo("请点击并拖动鼠标来选择跟踪目标")
 
     def predict_target_position(self, current_x):
         """预测目标位置"""
@@ -147,6 +157,13 @@ class image_listenner:
         try:
             self.img = self.bridge.imgmsg_to_cv2(msg, "bgr8")
             image = self.img
+            
+            # 显示提示框
+            if not trackObject:
+                cv2.putText(image, "Click and drag to select target", 
+                          (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 
+                          1, (0, 255, 0), 2)
+                
             track_centerX, length_of_diagonal = ExamByCamshift()
             
             if track_centerX >= 0:
