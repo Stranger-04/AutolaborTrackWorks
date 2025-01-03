@@ -35,4 +35,48 @@
     
     <!-- 其他车轮同样修改为绿色 -->
     <!-- ...existing code... -->
+
+    <!-- 添加相机链接 -->
+    <link name="camera_link">
+        <visual>
+            <geometry>
+                <box size="0.05 0.05 0.05"/>
+            </geometry>
+            <material name="black"/>
+        </visual>
+    </link>
+
+    <!-- 相机关节 -->
+    <joint name="camera_joint" type="fixed">
+        <parent link="base_link"/>
+        <child link="camera_link"/>
+        <origin xyz="0.2 0 0.1" rpy="0 0 0"/>
+    </joint>
+
+    <!-- 添加相机插件 -->
+    <gazebo reference="camera_link">
+        <sensor type="camera" name="camera">
+            <update_rate>30.0</update_rate>
+            <camera name="head">
+                <horizontal_fov>1.3962634</horizontal_fov>
+                <image>
+                    <width>640</width>
+                    <height>480</height>
+                    <format>R8G8B8</format>
+                </image>
+                <clip>
+                    <near>0.02</near>
+                    <far>300</far>
+                </clip>
+            </camera>
+            <plugin name="camera_controller" filename="libgazebo_ros_camera.so">
+                <alwaysOn>true</alwaysOn>
+                <updateRate>0.0</updateRate>
+                <cameraName>track_car/camera</cameraName>
+                <imageTopicName>image_raw</imageTopicName>
+                <cameraInfoTopicName>camera_info</cameraInfoTopicName>
+                <frameName>camera_link</frameName>
+            </plugin>
+        </sensor>
+    </gazebo>
 </robot>

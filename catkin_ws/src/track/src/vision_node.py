@@ -1,8 +1,6 @@
 #!/usr/bin/env python
 #############
-#
-#Node :choose target by opencv and calculate the direction
-#
+# 视觉跟踪节点：通过OpenCV进行目标选择和方向计算
 #############
 import rospy
 import cv_bridge
@@ -15,12 +13,13 @@ xs, ys, ws, hs = 0, 0, 0, 0  # selection.x selection.y
 xo, yo = 0, 0  # origin.x origin.y
 selectObject = False
 trackObject = 0
-#################
-#
-#   todos:
-#       choose a area as a target
-#
-#################
+##################
+# 鼠标事件回调函数
+# 功能：处理目标区域的选择
+# event: 鼠标事件类型
+# x, y: 鼠标坐标
+# flags: 鼠标事件标志
+##################
 def onMouse(event, x, y, flags, prams):
     global xs, ys, ws, hs, selectObject, xo, yo, trackObject
     if selectObject == True:
@@ -35,12 +34,16 @@ def onMouse(event, x, y, flags, prams):
     elif event == cv2.EVENT_LBUTTONUP:
         selectObject = False
         trackObject = -1
-#################
-#
-#   todos:
-#       track the target area by camshift
-#
-#################
+##################
+# CamShift目标跟踪实现
+# 功能：
+# 1. 将图像转换为HSV色彩空间
+# 2. 根据选定区域创建直方图
+# 3. 使用反向投影和CamShift算法跟踪目标
+# 返回值：
+# centerX: 目标中心x坐标
+# length_of_diagonal: 目标框对角线长度
+##################
 def ExamByCamshift():
     global xs, ys, ws, hs, selectObject, xo, yo, trackObject, image, roi_hist, track_window
     term_crit = (cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT, 10, 1)
@@ -91,7 +94,10 @@ class image_listenner:
         
         # 初始化bridge和订阅器
         self.bridge = cv_bridge.CvBridge()
-        self.image_sub = rospy.Subscriber("/usb_cam/image_raw", Image, self.image_sub_callback)
+        # 订阅仿真环境中的相机图像
+        self.image_sub = rospy.Subscriber("/track_car/camera/image_raw", 
+                                        Image, 
+                                        self.image_sub_callback)
         self.depth_sub = rospy.Subscriber("/camera/depth/image_raw", Image, self.depth_callback)
         self.twist_pub = rospy.Publisher("/cmd_vel", Twist, queue_size=10)
         
@@ -151,7 +157,7 @@ class image_listenner:
             rospy.logerr("depth image processing failed")
 
     def image_sub_callback(self, msg):
-        ''' callback of image_sub '''
+        '''图像订阅回调函数'''
         global image
 
         try:
@@ -160,9 +166,9 @@ class image_listenner:
             
             # 显示提示框
             if not trackObject:
-                cv2.putText(image, "Click and drag to select target", 
+                cv2.putText(image, "请点击并拖动鼠标选择跟踪目标", 
                           (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 
-                          1, (0, 255, 0), 2)
+                          0.7, (0, 255, 0), 2)
                 
             track_centerX, length_of_diagonal = ExamByCamshift()
             
