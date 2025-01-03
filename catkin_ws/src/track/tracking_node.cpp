@@ -1,6 +1,7 @@
 #include <ros/ros.h>
 #include <geometry_msgs/Twist.h>
 #include <nav_msgs/Odometry.h>
+#include <std_msgs/Bool.h>
 #include <tf2/LinearMath/Quaternion.h>
 #include <tf2/LinearMath/Matrix3x3.h>
 #include <cmath>
@@ -11,6 +12,7 @@ private:
     ros::Publisher cmd_vel_pub_;
     ros::Subscriber target_odom_sub_;
     ros::Subscriber current_odom_sub_;
+    ros::Subscriber control_mode_sub_;  // 新增
     
     nav_msgs::Odometry target_odom_;
     nav_msgs::Odometry current_odom_;
@@ -23,18 +25,22 @@ private:
     
     bool target_initialized_;
     bool current_initialized_;
+    bool auto_mode_;  // 新增
 
 public:
-    TrackingController() : nh_("~"), target_initialized_(false), current_initialized_(false) {
+    TrackingController() : nh_("~"), target_initialized_(false), current_initialized_(false), auto_mode_(true) {
         // 加载参数
         loadParameters();
         
-        // 创建发布者和订阅者
-        cmd_vel_pub_ = nh_.advertise<geometry_msgs::Twist>("/cmd_vel", 10);
-        target_odom_sub_ = nh_.subscribe("/target/odom", 10, &TrackingController::targetCallback, this);
-        current_odom_sub_ = nh_.subscribe("/odom", 10, &TrackingController::currentCallback, this);
+        // 修改topic名称，使用被控制车辆的odom作为目标
+        cmd_vel_pub_ = nh_.advertise<geometry_msgs::Twist>("/track_car/cmd_vel", 10);
+        target_odom_sub_ = nh_.subscribe("/target_car/odom", 10, &TrackingController::targetCallback, this);
+        current_odom_sub_ = nh_.subscribe("/track_car/odom", 10, &TrackingController::currentCallback, this);
         
-        ROS_INFO("Tracking controller initialized");
+        // 添加模式控制订阅者
+        control_mode_sub_ = nh_.subscribe("/control_mode", 1, &TrackingController::controlModeCallback, this);
+        
+        ROS_INFO("Tracking controller initialized - following /target_car/odom");
     }
 
     void loadParameters() {
@@ -53,9 +59,15 @@ public:
     void currentCallback(const nav_msgs::Odometry::ConstPtr& msg) {
         current_odom_ = *msg;
         current_initialized_ = true;
-        if (target_initialized_) {
+        if (target_initialized_ && auto_mode_) {  // 修改这里
             track();
         }
+    }
+
+    // 添加模式控制回调
+    void controlModeCallback(const std_msgs::Bool::ConstPtr& msg) {
+        auto_mode_ = msg->data;
+        ROS_INFO("切换至%s模式", auto_mode_ ? "自动" : "手动");
     }
 
     double normalizeAngle(double angle) {

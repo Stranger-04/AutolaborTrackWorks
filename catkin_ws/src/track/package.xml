@@ -1,15 +1,14 @@
 <?xml version="1.0"?>
 <package format="2">
   <name>track</name>
-  <version>0.1.0</version>
-  <description>The tracking package for Autolabor vehicle</description>
-  <maintainer email="user@todo.todo">user</maintainer>
+  <version>0.0.0</version>
+  <description>The track package</description>
+  <maintainer email="todo@todo.com">todo</maintainer>
   <license>TODO</license>
 
   <buildtool_depend>catkin</buildtool_depend>
   <depend>roscpp</depend>
   <depend>geometry_msgs</depend>
   <depend>nav_msgs</depend>
-  <depend>tf2</depend>
-  <depend>tf2_ros</depend>
+  <depend>gazebo_ros</depend>             <!-- 只保留仿真依赖 -->
 </package>

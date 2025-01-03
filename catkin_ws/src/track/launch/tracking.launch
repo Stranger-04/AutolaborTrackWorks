@@ -1,0 +1,18 @@
+<?xml version="1.0"?>
+<launch>
+    <!-- 键盘控制节点 -->
+    <node name="keyboard_control" pkg="track" type="keyboard_control" output="screen">
+        <remap from="cmd_vel" to="/target_car/cmd_vel"/>
+    </node>
+
+    <!-- 跟踪节点 -->
+    <node name="tracking_node" pkg="track" type="tracking_node" output="screen">
+        <param name="max_linear_speed" value="0.5"/>
+        <param name="max_angular_speed" value="1.0"/>
+        <param name="min_distance" value="0.5"/>
+        <param name="desired_distance" value="1.0"/>
+        <remap from="cmd_vel" to="/track_car/cmd_vel"/>
+        <remap from="target/odom" to="/target_car/odom"/>
+        <remap from="odom" to="/track_car/odom"/>
+    </node>
+</launch>

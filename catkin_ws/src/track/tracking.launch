@@ -1,4 +1,10 @@
+<?xml version="1.0"?>
 <launch>
+    <!-- 加载目标车辆的键盘控制节点 -->
+    <node pkg="simulation" type="keyboard_control" name="keyboard_control" output="screen">
+        <remap from="cmd_vel" to="/target_car/cmd_vel"/>
+    </node>
+    
     <!-- 加载参数 -->
     <rosparam command="load" file="$(find track)/config/tracking_params.yaml" />
     

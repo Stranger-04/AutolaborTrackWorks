@@ -5,12 +5,12 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   geometry_msgs
   nav_msgs
-  tf2
-  tf2_ros
+  autolabor_pro1_driver
+  gazebo_ros
 )
 
 catkin_package(
-  CATKIN_DEPENDS roscpp geometry_msgs nav_msgs tf2 tf2_ros
+  CATKIN_DEPENDS roscpp geometry_msgs nav_msgs
 )
 
 include_directories(
@@ -20,3 +20,7 @@ include_directories(
 
 add_executable(tracking_node src/tracking_node.cpp)
 target_link_libraries(tracking_node ${catkin_LIBRARIES})
+
+# 添加键盘控制节点
+add_executable(keyboard_control src/keyboard_control.cpp)
+target_link_libraries(keyboard_control ${catkin_LIBRARIES})

@@ -1,0 +1,40 @@
+<?xml version="1.0"?>
+<launch>
+    <!-- 加载空白世界 -->
+    <include file="$(find gazebo_ros)/launch/empty_world.launch">
+        <arg name="world_name" value="$(find track)/worlds/track_world.world"/>
+        <arg name="paused" value="false"/>
+        <arg name="use_sim_time" value="true"/>
+        <arg name="gui" value="true"/>
+        <arg name="debug" value="false"/>
+    </include>
+
+    <!-- 目标车辆 -->
+    <group ns="target_car">
+        <param name="robot_description" command="$(find xacro)/xacro --inorder '$(find autolabor_description)/urdf/autolabor_pro1.urdf'" />
+        <node name="spawn_urdf" pkg="gazebo_ros" type="spawn_model" 
+            args="-param robot_description -urdf -model target_car 
+                  -x 0.0 -y 0.0 -z 0.0 -Y 0.0" />
+        
+        <node pkg="robot_state_publisher" type="robot_state_publisher" name="robot_state_publisher" />
+        <node pkg="joint_state_publisher" type="joint_state_publisher" name="joint_state_publisher" />
+    </group>
+
+    <!-- 跟踪车辆 -->
+    <group ns="track_car">
+        <param name="robot_description" command="$(find xacro)/xacro --inorder '$(find autolabor_description)/urdf/autolabor_pro1.urdf'" />
+        <node name="spawn_urdf" pkg="gazebo_ros" type="spawn_model" 
+            args="-param robot_description -urdf -model track_car 
+                  -x -2.0 -y 0.0 -z 0.0 -Y 0.0" />
+        
+        <node pkg="robot_state_publisher" type="robot_state_publisher" name="robot_state_publisher" />
+        <node pkg="joint_state_publisher" type="joint_state_publisher" name="joint_state_publisher" />
+    </group>
+
+    <!-- 启动跟踪控制节点 -->
+    <include file="$(find track)/launch/tracking.launch" />
+
+    <!-- RViz visualization -->
+    <node name="rviz" pkg="rviz" type="rviz" 
+          args="-d $(find track)/rviz/tracking_simulation.rviz" />
+</launch>
