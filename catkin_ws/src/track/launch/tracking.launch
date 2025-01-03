@@ -3,6 +3,11 @@
     <!-- 启动仿真环境 -->
     <include file="$(find gazebo_ros)/launch/empty_world.launch">
         <arg name="world_name" value="$(find track)/worlds/track.world"/>
+        <arg name="paused" value="false"/>
+        <arg name="use_sim_time" value="true"/>
+        <arg name="gui" value="true"/>
+        <arg name="headless" value="false"/>
+        <arg name="debug" value="false"/>
     </include>
 
     <!-- 键盘控制节点 -->
@@ -30,12 +35,18 @@
 
     <!-- 生成目标车辆模型 -->
     <node name="spawn_target_car" pkg="gazebo_ros" type="spawn_model"
-          args="-urdf -param /target_car/robot_description -model target_car 
+          respawn="false" output="screen"
+          args="-urdf 
+                -param /target_car/robot_description 
+                -model target_car 
                 -x 0.0 -y 0.0 -z 0.0" />
 
     <!-- 生成跟踪车辆模型 -->
     <node name="spawn_track_car" pkg="gazebo_ros" type="spawn_model"
-          args="-urdf -param /track_car/robot_description -model track_car
+          respawn="false" output="screen"
+          args="-urdf 
+                -param /track_car/robot_description 
+                -model track_car 
                 -x -2.0 -y 0.0 -z 0.0" />
 
     <!-- 修改相机配置 -->
