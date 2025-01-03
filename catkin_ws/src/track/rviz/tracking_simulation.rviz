@@ -6,11 +6,11 @@ Panels:
       Expanded:
         - /Global Options1
         - /Status1
-        - /TF1
         - /RobotModel1
         - /RobotModel2
+        - /TF1
       Splitter Ratio: 0.5
-    Tree Height: 775
+    Tree Height: 595
 Visualization Manager:
   Class: ""
   Displays:
@@ -20,34 +20,68 @@ Visualization Manager:
       Color: 160; 160; 164
       Enabled: true
       Name: Grid
+    - Alpha: 1
+      Class: rviz/RobotModel
+      Collision Enabled: false
+      Enabled: true
+      Links:
+        All Links Enabled: true
+        Expand Joint Details: false
+        Expand Link Details: false
+        Expand Tree: false
+        Link Tree Style: Links in Alphabetic Order
+      Name: Target Robot
+      Robot Description: target_car/robot_description
+      TF Prefix: target_car
+      Update Interval: 0
+      Visual Enabled: true
+    - Alpha: 1
+      Class: rviz/RobotModel
+      Collision Enabled: false
+      Enabled: true
+      Links:
+        All Links Enabled: true
+        Expand Joint Details: false
+        Expand Link Details: false
+        Expand Tree: false
+        Link Tree Style: Links in Alphabetic Order
+      Name: Track Robot
+      Robot Description: track_car/robot_description
+      TF Prefix: track_car
+      Update Interval: 0
+      Visual Enabled: true
     - Class: rviz/TF
       Enabled: true
       Frame Timeout: 15
-      Name: TF
-    - Alpha: 1
-      Class: rviz/RobotModel
-      Collision Enabled: false
-      Enabled: true
-      Links:
-        All Links Enabled: true
-        Expand Joint Details: false
-        Expand Link Details: false
-        Expand Tree: false
-      Name: Target Car
-      Robot Description: /target_car/robot_description
-    - Alpha: 1
-      Class: rviz/RobotModel
-      Collision Enabled: false
-      Enabled: true
-      Links:
-        All Links Enabled: true
-        Expand Joint Details: false
-        Expand Link Details: false
-        Expand Tree: false
-      Name: Track Car
-      Robot Description: /track_car/robot_description
+      Frames:
+        All Enabled: true
+      Marker Alpha: 1
+      Marker Scale: 1
+      Show Arrows: true
+      Show Axes: true
+      Show Names: true
   Global Options:
     Background Color: 48; 48; 48
-    Fixed Frame: map
+    Fixed Frame: world
     Frame Rate: 30
   Name: root
+  Tools:
+    - Class: rviz/Interact
+    - Class: rviz/MoveCamera
+    - Class: rviz/Select
+    - Class: rviz/SetInitialPose
+    - Class: rviz/SetGoal
+  Views:
+    Current:
+      Class: rviz/Orbit
+      Distance: 10
+      Position:
+        X: 0
+        Y: 0
+        Z: 5
+      Target Frame: <Fixed Frame>
+  Window Geometry:
+    Height: 876
+    Width: 1600
+    X: 0
+    Y: 24
