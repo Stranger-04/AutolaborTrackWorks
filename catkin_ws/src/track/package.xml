@@ -11,4 +11,8 @@
   <depend>geometry_msgs</depend>
   <depend>nav_msgs</depend>
   <depend>gazebo_ros</depend>
+  <depend>rviz</depend>
+  <depend>robot_state_publisher</depend>
+  <depend>xacro</depend>
+  <depend>autolabor_description</depend>
 </package>

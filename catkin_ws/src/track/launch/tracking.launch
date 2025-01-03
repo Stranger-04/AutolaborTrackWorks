@@ -15,4 +15,18 @@
         <remap from="target/odom" to="/target_car/odom"/>
         <remap from="odom" to="/track_car/odom"/>
     </node>
+
+    <!-- 添加RViz可视化 -->
+    <node name="rviz" pkg="rviz" type="rviz" args="-d $(find track)/rviz/tracking.rviz" output="screen"/>
+
+    <!-- 添加两个机器人的robot_state_publisher -->
+    <group ns="target_car">
+        <param name="robot_description" command="$(find xacro)/xacro --inorder '$(find autolabor_description)/urdf/autolabor_mini.urdf'"/>
+        <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher"/>
+    </group>
+
+    <group ns="track_car">
+        <param name="robot_description" command="$(find xacro)/xacro --inorder '$(find autolabor_description)/urdf/autolabor_mini.urdf'"/>
+        <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher"/>
+    </group>
 </launch>

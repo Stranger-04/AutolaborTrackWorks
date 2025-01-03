@@ -1,0 +1,38 @@
+Panels:
+  - Class: rviz/Displays
+    Name: Displays
+    Property Tree Widget:
+      Expanded:
+        - /Global Options1
+        - /TF1/Frames1
+      Splitter Ratio: 0.5
+    Tree Height: 565
+Visualization Manager:
+  Class: ""
+  Displays:
+    - Class: rviz/Grid
+      Name: Grid
+      Enabled: true
+    - Class: rviz/TF
+      Name: TF
+      Enabled: true
+    - Alpha: 1
+      Class: rviz/RobotModel
+      Name: Target Robot
+      Robot Description: target_car/robot_description
+      Enabled: true
+    - Alpha: 1
+      Class: rviz/RobotModel
+      Name: Track Robot
+      Robot Description: track_car/robot_description
+      Enabled: true
+    - Alpha: 1
+      Class: rviz/Odometry
+      Name: Target Odometry
+      Topic: /target_car/odom
+      Color: 255; 25; 0
+    - Alpha: 1
+      Class: rviz/Odometry
+      Name: Track Odometry
+      Topic: /track_car/odom
+      Color: 0; 255; 0
