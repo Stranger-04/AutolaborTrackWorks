@@ -1,1 +1,0 @@
-/opt/autolabor/ros/catkin_ws/devel/.private/wiimote/share/roseus/ros/wiimote/manifest.l

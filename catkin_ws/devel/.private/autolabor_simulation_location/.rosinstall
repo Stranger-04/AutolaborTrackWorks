@@ -1,2 +1,0 @@
-- setup-file:
-    local-name: /opt/autolabor/ros/catkin_ws/devel/.private/autolabor_simulation_location/setup.sh

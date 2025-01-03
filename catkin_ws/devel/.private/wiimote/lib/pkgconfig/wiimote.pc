@@ -1,8 +1,0 @@
-prefix=/opt/autolabor/ros/catkin_ws/devel/.private/wiimote
-
-Name: wiimote
-Description: Description of wiimote
-Version: 1.11.0
-Cflags: -I/opt/autolabor/ros/catkin_ws/devel/.private/wiimote/include -I/opt/autolabor/ros/catkin_ws/src/driver/joystick/joystick_drivers/wiimote/include
-Libs: -L${prefix}/lib 
-Requires: geometry_msgs sensor_msgs std_msgs std_srvs rospy roscpp roslib genmsg

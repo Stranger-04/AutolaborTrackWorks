@@ -1,1 +1,0 @@
-/opt/autolabor/ros/catkin_ws/devel/.private/marvelmind/lib/python2.7/dist-packages/marvelmind/msg/_beacon_pos.py

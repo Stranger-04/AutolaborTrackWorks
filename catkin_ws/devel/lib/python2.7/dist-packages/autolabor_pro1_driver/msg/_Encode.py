@@ -1,1 +1,0 @@
-/opt/autolabor/ros/catkin_ws/devel/.private/autolabor_pro1_driver/lib/python2.7/dist-packages/autolabor_pro1_driver/msg/_Encode.py

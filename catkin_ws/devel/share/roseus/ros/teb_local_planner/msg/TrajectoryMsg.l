@@ -1,1 +1,0 @@
-/opt/autolabor/ros/catkin_ws/devel/.private/teb_local_planner/share/roseus/ros/teb_local_planner/msg/TrajectoryMsg.l

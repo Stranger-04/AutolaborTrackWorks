@@ -1,1 +1,0 @@
-/opt/autolabor/ros/catkin_ws/devel/.private/navi_multi_goals_pub_rviz_plugin/share/navi_multi_goals_pub_rviz_plugin/cmake/navi_multi_goals_pub_rviz_pluginConfig-version.cmake

@@ -1,8 +1,0 @@
-prefix=/opt/autolabor/ros/catkin_ws/devel/.private/wr_fslidar
-
-Name: wr_fslidar
-Description: Description of wr_fslidar
-Version: 0.0.0
-Cflags: 
-Libs: -L${prefix}/lib 
-Requires: 

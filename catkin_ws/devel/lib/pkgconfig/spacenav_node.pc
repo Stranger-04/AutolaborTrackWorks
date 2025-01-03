@@ -1,1 +1,0 @@
-/opt/autolabor/ros/catkin_ws/devel/.private/spacenav_node/lib/pkgconfig/spacenav_node.pc

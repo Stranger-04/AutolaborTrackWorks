@@ -1,1 +1,0 @@
-/opt/autolabor/ros/catkin_ws/devel/.private/autolabor_simulation_stage/lib/python2.7/dist-packages/autolabor_simulation_stage/srv/__init__.py

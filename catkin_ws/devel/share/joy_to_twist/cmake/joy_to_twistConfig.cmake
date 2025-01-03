@@ -1,1 +1,0 @@
-/opt/autolabor/ros/catkin_ws/devel/.private/joy_to_twist/share/joy_to_twist/cmake/joy_to_twistConfig.cmake

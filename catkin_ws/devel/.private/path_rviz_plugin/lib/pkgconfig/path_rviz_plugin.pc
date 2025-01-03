@@ -1,8 +1,0 @@
-prefix=/opt/autolabor/ros/catkin_ws/devel/.private/path_rviz_plugin
-
-Name: path_rviz_plugin
-Description: Description of path_rviz_plugin
-Version: 0.0.0
-Cflags: -I/opt/autolabor/ros/catkin_ws/src/navigation/path_rviz_plugin/include
-Libs: -L${prefix}/lib 
-Requires: 

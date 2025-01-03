@@ -1,1 +1,0 @@
-/opt/autolabor/ros/catkin_ws/devel/.private/marvelmind/share/roseus/ros/marvelmind/msg/beacon_pos.l

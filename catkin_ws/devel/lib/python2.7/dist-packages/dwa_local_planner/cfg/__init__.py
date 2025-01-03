@@ -1,1 +1,0 @@
-/opt/autolabor/ros/catkin_ws/devel/.private/dwa_local_planner/lib/python2.7/dist-packages/dwa_local_planner/cfg/__init__.py

@@ -1,1 +1,0 @@
-/opt/autolabor/ros/catkin_ws/devel/.private/nav_core/lib/pkgconfig/nav_core.pc

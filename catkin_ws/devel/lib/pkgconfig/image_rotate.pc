@@ -1,1 +1,0 @@
-/opt/autolabor/ros/catkin_ws/devel/.private/image_rotate/lib/pkgconfig/image_rotate.pc

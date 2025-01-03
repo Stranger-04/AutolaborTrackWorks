@@ -1,1 +1,0 @@
-/opt/autolabor/ros/catkin_ws/devel/.private/image_publisher/lib/pkgconfig/image_publisher.pc

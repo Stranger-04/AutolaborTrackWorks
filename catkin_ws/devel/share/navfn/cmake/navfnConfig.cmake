@@ -1,1 +1,0 @@
-/opt/autolabor/ros/catkin_ws/devel/.private/navfn/share/navfn/cmake/navfnConfig.cmake

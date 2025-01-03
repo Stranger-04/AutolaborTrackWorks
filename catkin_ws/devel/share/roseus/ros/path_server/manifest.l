@@ -1,1 +1,0 @@
-/opt/autolabor/ros/catkin_ws/devel/.private/path_server/share/roseus/ros/path_server/manifest.l

@@ -1,8 +1,0 @@
-prefix=/opt/autolabor/ros/catkin_ws/devel/.private/record_path_planner
-
-Name: record_path_planner
-Description: Description of record_path_planner
-Version: 0.0.0
-Cflags: -I/opt/autolabor/ros/catkin_ws/src/navigation/record_path_planner/include
-Libs: -L${prefix}/lib 
-Requires: 

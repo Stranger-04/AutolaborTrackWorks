@@ -1,1 +1,0 @@
-/opt/autolabor/ros/catkin_ws/devel/.private/marvelmind/include/marvelmind/beacon_pos.h

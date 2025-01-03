@@ -1,1 +1,0 @@
-/opt/autolabor/ros/catkin_ws/devel/.private/autolabor_test_launch/share/autolabor_test_launch/cmake/autolabor_test_launchConfig-version.cmake

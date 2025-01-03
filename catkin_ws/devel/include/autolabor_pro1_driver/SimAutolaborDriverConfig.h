@@ -1,1 +1,0 @@
-/opt/autolabor/ros/catkin_ws/devel/.private/autolabor_pro1_driver/include/autolabor_pro1_driver/SimAutolaborDriverConfig.h

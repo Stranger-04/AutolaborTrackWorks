@@ -1,1 +1,0 @@
-/opt/autolabor/ros/catkin_ws/devel/.private/autolabor_simulation_base/share/autolabor_simulation_base/cmake/autolabor_simulation_baseConfig-version.cmake
