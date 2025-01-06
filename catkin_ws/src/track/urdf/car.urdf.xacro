@@ -7,11 +7,9 @@
     <material name="yellow">
         <color rgba="1 1 0 1"/>
     </material>
-    
     <material name="green">
         <color rgba="0 1 0 1"/>
     </material>
-
     <material name="black">
         <color rgba="0 0 0 1"/>
     </material>
@@ -44,17 +42,24 @@
                 <box size="0.5 0.3 0.1"/>
             </geometry>
         </collision>
-        <!-- ...existing code... -->
     </link>
 
-    <!-- Wheel joint -->
+    <!-- Left wheel -->
     <joint name="wheel_1_joint" type="continuous">
         <parent link="base_link"/>
         <child link="wheel_1"/>
-        <!-- ...existing code... -->
+        <origin xyz="0 0.15 -0.05" rpy="0 0 0"/>
+        <axis xyz="0 1 0"/>
     </joint>
     
-    <!-- Wheel link -->
+    <link name="wheel_1">
+        <inertial>
+            <mass value="0.1"/>
+            <origin xyz="0 0 0" rpy="0 0 0"/>
+            <inertia ixx="0.000375" ixy="0" ixz="0" iyy="0.000375" iyz="0" izz="0.00072"/>
+        </inertial>
+        <visual>
+            <geometry>
                 <cylinder radius="0.06" length="0.04"/>
             </geometry>
             <material name="black"/>
@@ -64,7 +69,6 @@
                 <cylinder radius="0.06" length="0.04"/>
             </geometry>
         </collision>
-        <!-- ...existing code... -->
     </link>
     
     <!-- Right wheel -->
@@ -75,7 +79,6 @@
         <axis xyz="0 1 0"/>
     </joint>
     
-    <!-- Right wheel link -->
     <link name="wheel_2">
         <inertial>
             <mass value="0.1"/>
@@ -95,10 +98,7 @@
         </collision>
     </link>
 
-    <!-- Other wheels are also green -->
-    <!-- ...existing code... -->
-
-    <!-- Camera link -->
+    <!-- Camera link and joint -->
     <link name="camera_link">
         <visual>
             <geometry>
@@ -108,14 +108,13 @@
         </visual>
     </link>
 
-    <!-- Camera joint -->
     <joint name="camera_joint" type="fixed">
         <parent link="base_link"/>
         <child link="camera_link"/>
         <origin xyz="0.2 0 0.1" rpy="0 0 0"/>
     </joint>
 
-    <!-- Camera plugin -->
+    <!-- Gazebo plugins -->
     <gazebo reference="camera_link">
         <sensor type="camera" name="camera">
             <update_rate>30.0</update_rate>
@@ -142,7 +141,6 @@
         </sensor>
     </gazebo>
 
-    <!-- Add Gazebo plugins for differential drive -->
     <gazebo>
         <plugin name="differential_drive_controller" filename="libgazebo_ros_diff_drive.so">
             <leftJoint>wheel_1_joint</leftJoint>
@@ -157,15 +155,6 @@
             <publishWheelTF>false</publishWheelTF>
             <publishOdomTF>true</publishOdomTF>
             <publishWheelJointState>false</publishWheelJointState>
-            <wheelAcceleration>1.0</wheelAcceleration>
-            <wheelTorque>20</wheelTorque>
-            <odometrySource>world</odometrySource>
-            <updateRate>30</updateRate>
-        </plugin>
-    </gazebo>
-</robot>
-            <publishWheelJointState>false</publishWheelJointState>
-
             <wheelAcceleration>1.0</wheelAcceleration>
             <wheelTorque>20</wheelTorque>
             <odometrySource>world</odometrySource>
