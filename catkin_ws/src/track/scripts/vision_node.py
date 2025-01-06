@@ -54,176 +54,92 @@ def onMouse(event, x, y, flags, prams):
 ##################
 def ExamByCamshift():
     global xs, ys, ws, hs, selectObject, xo, yo, trackObject, image, roi_hist, track_window
-    # 创建显示用的图像副本
     display_img = image.copy()
+    centerX = -1.0  # 初始化返回值
+    length_of_diagonal = 0.0  # 初始化返回值
     
+    # 定义跟踪参数
     term_crit = (cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT, 10, 1)
-    hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
-    centerX = -1.0
-    length_of_diagonal = float()
     
     try:
-        # 显示当前状态
-        status = "等待选择" if not trackObject else "追踪中" if trackObject == 1 else "初始化追踪"
-        cv2.putText(display_img, "Status: " + status, (10, 30), 
-                   cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
+        # 转换为HSV空间
+        hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
         
-        # 实时显示框选过程
+        # 显示选择框
         if selectObject and ws > 0 and hs > 0:
             cv2.rectangle(display_img, (xs, ys), (xs+ws, ys+hs), (0, 255, 0), 2)
-            cv2.putText(display_img, "Selection: {}x{}".format(ws, hs), 
+            cv2.putText(display_img, "Selection: %dx%d" % (ws, hs), 
                        (xs, ys-10), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
         
-        # 执行跟踪
+        # 目标跟踪处理
         if trackObject != 0:
-            try:
-                # 增加HSV掩码范围，提高跟踪稳定性
-                mask = cv2.inRange(hsv, np.array((0., 20., 30.)), np.array((180., 255., 255.)))
-                
-                if trackObject == -1:  # 初次选择目标
-                    track_window = (int(xs), int(ys), int(ws), int(hs))
-                    maskroi = mask[ys:ys + hs, xs:xs + ws]
-                    hsv_roi = hsv[ys:ys + hs, xs:xs + ws]
-                    
-                    # 使用多个通道计算直方图，提高特征区分度
-                    channels = [0, 1]  # 使用H和S通道
-                    ranges = [0, 180, 0, 256]  # H和S通道的范围
-                    roi_hist = cv2.calcHist([hsv_roi], channels, maskroi, [180, 256], ranges)
-                    cv2.normalize(roi_hist, roi_hist, 0, 255, cv2.NORM_MINMAX)
-                    trackObject = 1
-                    
-                    # 显示已选择的区域
-                    cv2.rectangle(display_img, (int(xs), int(ys)), 
-                                (int(xs+ws), int(ys+hs)), (255, 0, 0), 2)
-                    cv2.putText(display_img, "Target Locked", (int(xs), int(ys-10)), 
-                               cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 0, 0), 2)
-                
-                # 执行跟踪
-                dst = cv2.calcBackProject([hsv], [0, 1], roi_hist, [0, 180, 0, 256], 1)
-                dst &= mask
-                
-                # 应用均值漂移跟踪
-                ret, track_window = cv2.CamShift(dst, track_window, term_crit)
-                
-                # 更新跟踪结果
-                pts = cv2.boxPoints(ret)
-                pts = np.int0(pts)
-                centerX = float(ret[0][0])
-                length_of_diagonal = math.sqrt(float(ret[1][1]) ** 2 + float(ret[1][0]) ** 2)
-                
-                # 绘制跟踪框和中心点
-                cv2.polylines(display_img, [pts], True, (0, 0, 255), 2)
-                cv2.circle(display_img, (int(centerX), int(ret[0][1])), 5, (0, 255, 255), -1)
-                
-                # 显示跟踪信息
-                cv2.putText(display_img, "Tracking: ({:.0f}, {:.0f})".format(centerX, ret[0][1]), 
-                           (10, display_img.shape[0]-20), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 255), 2)
-                
-                rospy.loginfo("追踪状态 - Center: (%.1f, %.1f), Size: %.1f" % 
-                             (centerX, ret[0][1], length_of_diagonal))
-                
-            except Exception as e:
-                rospy.logerr("跟踪处理失败: %s", str(e))
-                # 跟踪失败时不重置trackObject，保持跟踪状态
-                centerX = -1.0
-                length_of_diagonal = 0.0
-        
-        # 显示操作提示
-        if not trackObject:
-            cv2.putText(display_img, "Click and drag to select target", 
-                       (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
-        
-        cv2.imshow('imshow', display_img)
-        key = cv2.waitKey(1)
-        
-        # 添加键盘控制
-        if key == ord('r'):  # 按R键重置跟踪
-            trackObject = 0
-            rospy.loginfo("重置追踪")
-        elif key == ord('q'):  # 按Q键退出
-            rospy.signal_shutdown("User quit")
-            
-    except Exception as e:
-        rospy.logerr("ExamByCamshift错误: %s", str(e))
-        return -1.0, 0.0
-        
-    return centerX, length_of_diagonal
-
-def ExamByCamshift():
-    global xs, ys, ws, hs, selectObject, xo, yo, trackObject, image, roi_hist, track_window
-    display_img = image.copy()
-    
-    try:
-        # 修改HSV参数范围以更好地识别车辆
-        hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
-        if trackObject != 0:
-            # 扩大HSV范围以适应不同光照条件
-            lower_bound = np.array((0., 0., 40.))  # 降低饱和度要求，提高亮度下限
+            # 设置HSV掩码范围
+            lower_bound = np.array((0., 0., 40.))
             upper_bound = np.array((180., 255., 255.))
             mask = cv2.inRange(hsv, lower_bound, upper_bound)
             
-            if trackObject == -1:
+            if trackObject == -1:  # 初始化跟踪
                 track_window = (int(xs), int(ys), int(ws), int(hs))
                 maskroi = mask[ys:ys + hs, xs:xs + ws]
                 hsv_roi = hsv[ys:ys + hs, xs:xs + ws]
                 
-                # 使用所有HSV通道进行跟踪
-                roi_hist = cv2.calcHist([hsv_roi], [0, 1, 2], maskroi, [32, 32, 32], [0, 180, 0, 256, 0, 256])
-                cv2.normalize(roi_hist, roi_hist, 0, 255, cv2.NORM_MINMAX)
-                trackObject = 1
-                
-                # 显示ROI区域的HSV直方图
-                rospy.loginfo("目标区域 HSV 范围 - H: %d-%d, S: %d-%d, V: %d-%d",
+                # 记录目标的HSV范围
+                rospy.loginfo("目标HSV范围 - H: %d-%d, S: %d-%d, V: %d-%d",
                             np.min(hsv_roi[:,:,0]), np.max(hsv_roi[:,:,0]),
                             np.min(hsv_roi[:,:,1]), np.max(hsv_roi[:,:,1]),
                             np.min(hsv_roi[:,:,2]), np.max(hsv_roi[:,:,2]))
-            
-            # 改进反向投影
+                
+                # 使用目标实际的HSV范围创建掩码
+                target_lower = np.array((
+                    max(0, np.min(hsv_roi[:,:,0])-10),
+                    max(0, np.min(hsv_roi[:,:,1])-40),
+                    max(0, np.min(hsv_roi[:,:,2])-40)
+                ))
+                target_upper = np.array((
+                    min(180, np.max(hsv_roi[:,:,0])+10),
+                    min(255, np.max(hsv_roi[:,:,1])+40),
+                    min(255, np.max(hsv_roi[:,:,2])+40)
+                ))
+                
+                # 重新计算掩码
+                mask = cv2.inRange(hsv, target_lower, target_upper)
+                maskroi = mask[ys:ys + hs, xs:xs + ws]
+                
+                # 计算直方图
+                roi_hist = cv2.calcHist([hsv_roi], [0, 1, 2], maskroi, [32, 32, 32], 
+                                      [0, 180, 0, 256, 0, 256])
+                cv2.normalize(roi_hist, roi_hist, 0, 255, cv2.NORM_MINMAX)
+                trackObject = 1
+                
+            # 执行反向投影
             dst = cv2.calcBackProject([hsv], [0, 1, 2], roi_hist, [0, 180, 0, 256, 0, 256], 1)
+            dst &= mask
             
-            # 添加图像预处理
+            # 添加形态学处理改善跟踪效果
             kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3,3))
             dst = cv2.filter2D(dst, -1, kernel)
-            dst = cv2.threshold(dst, 50, 255, cv2.THRESH_BINARY)[1]
-            dst = cv2.erode(dst, None, iterations=2)
-            dst = cv2.dilate(dst, None, iterations=2)
             
-            # 应用camshift
+            # 应用CamShift
             ret, track_window = cv2.CamShift(dst, track_window, term_crit)
             
-            # 验证跟踪结果
-            if track_window[2] * track_window[3] == 0:
-                rospy.logwarn("跟踪窗口大小为零，重置跟踪")
-                trackObject = 0
-                return -1.0, 0.0
-                
-            # 显示跟踪结果
+            # 更新跟踪结果
             pts = cv2.boxPoints(ret)
             pts = np.int0(pts)
             centerX = float(ret[0][0])
             length_of_diagonal = math.sqrt(float(ret[1][1]) ** 2 + float(ret[1][0]) ** 2)
             
-            # 绘制跟踪框和中心点
+            # 绘制跟踪结果
             cv2.polylines(display_img, [pts], True, (0, 0, 255), 2)
             cv2.circle(display_img, (int(centerX), int(ret[0][1])), 5, (0, 255, 255), -1)
             
-            # 显示调试信息
-            cv2.putText(display_img, "Size: %.0fx%.0f" % (ret[1][0], ret[1][1]),
-                       (int(centerX)-30, int(ret[0][1])-20),
-                       cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 255), 2)
-            
-            # 添加跟踪质量检查
-            track_quality = cv2.meanStdDev(dst[int(ret[0][1]-ret[1][1]/2):int(ret[0][1]+ret[1][1]/2),
-                                             int(centerX-ret[1][0]/2):int(centerX+ret[1][0]/2)])[0][0]
-            if track_quality < 30:  # 跟踪质量过低
-                rospy.logwarn("跟踪质量低: %.2f", track_quality)
-            
-        # ...existing code...
+        # 显示图像
+        cv2.imshow('imshow', display_img)
+        cv2.waitKey(1)
         
     except Exception as e:
         rospy.logerr("跟踪处理失败: %s", str(e))
         return -1.0, 0.0
-    
+        
     return centerX, length_of_diagonal
 
 class image_listenner:
