@@ -119,8 +119,8 @@ def ExamByCamshift():
                 cv2.putText(display_img, "Tracking: ({:.0f}, {:.0f})".format(centerX, ret[0][1]), 
                            (10, display_img.shape[0]-20), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 255), 2)
                 
-                rospy.loginfo("追踪状态 - Center: ({:.1f}, {:.1f}), Size: {:.1f}", 
-                             centerX, ret[0][1], length_of_diagonal)
+                rospy.loginfo("追踪状态 - Center: (%.1f, %.1f), Size: %.1f" % 
+                             (centerX, ret[0][1], length_of_diagonal))
                 
             except Exception as e:
                 rospy.logerr("跟踪处理失败: %s", str(e))
@@ -291,8 +291,8 @@ class image_listenner:
             # 当转向时降低速度
             msg.linear.x *= (1.0 - 0.5 * abs(msg.angular.z))
             
-            rospy.loginfo("Control - Error_x: {:.2f}, Size: {:.2f}, Speed: {:.2f}, Turn: {:.2f}".format(
-                         error_x, length, msg.linear.x, msg.angular.z))
+            rospy.loginfo("Control - Error_x: %.2f, Size: %.2f, Speed: %.2f, Turn: %.2f" % 
+                         (error_x, length, msg.linear.x, msg.angular.z))
         
         return msg
 
@@ -330,7 +330,7 @@ class image_listenner:
             track_centerX, length_of_diagonal = ExamByCamshift()
             
             # 添加图像接收和处理状态日志
-            rospy.logdebug("图像大小: %dx%d", image.shape[1], image.shape[0])
+            rospy.logdebug("图像大小: %dx%d" % (image.shape[1], image.shape[0]))
             
             if track_centerX >= 0 and length_of_diagonal > self.min_target_size:
                 self.track_lost_count = 0  # 重置丢失计数
@@ -338,11 +338,11 @@ class image_listenner:
                 control_msg = self.calculate_control(predicted_x, length_of_diagonal)
                 
                 # 添加调试信息显示
-                cv2.putText(image, "Target X: {:.1f}, Size: {:.1f}".format(
-                           predicted_x, length_of_diagonal), (10, 60),
+                cv2.putText(image, "Target X: %.1f, Size: %.1f" % 
+                           (predicted_x, length_of_diagonal), (10, 60),
                            cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
-                cv2.putText(image, "Control - Turn: {:.2f}, Speed: {:.2f}".format(
-                           control_msg.angular.z, control_msg.linear.x), (10, 90),
+                cv2.putText(image, "Control - Turn: %.2f, Speed: %.2f" % 
+                           (control_msg.angular.z, control_msg.linear.x), (10, 90),
                            cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
                 
                 # 发布控制命令
