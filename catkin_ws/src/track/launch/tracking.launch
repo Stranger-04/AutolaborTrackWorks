@@ -10,11 +10,11 @@
     <!-- 加载机器人描述参数 -->
     <group ns="target_car">
         <param name="robot_description" 
-               command="$(find xacro)/xacro --inorder '$(find track)/urdf/car.urdf.xacro' robot_type:=target_car" />
+               command="$(find xacro)/xacro $(find track)/urdf/car.urdf.xacro robot_type:='target_car'" />
     </group>
     <group ns="track_car">
         <param name="robot_description" 
-               command="$(find xacro)/xacro --inorder '$(find track)/urdf/car.urdf.xacro' robot_type:=track_car" />
+               command="$(find xacro)/xacro $(find track)/urdf/car.urdf.xacro robot_type:='track_car'" />
     </group>
 
     <!-- 核心功能节点 -->

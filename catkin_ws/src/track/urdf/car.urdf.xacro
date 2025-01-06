@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <robot name="car" xmlns:xacro="http://www.ros.org/wiki/xacro">
-    <!-- Robot namespace parameter -->
-    <xacro:property name="robot_type" value="track_car"/>
+    <!-- Robot type parameter -->
+    <xacro:arg name="robot_type" default="track_car"/>
     
     <!-- Materials -->
     <material name="yellow">
@@ -27,8 +27,12 @@
             <geometry>
                 <box size="0.5 0.3 0.1"/>
             </geometry>
-            <material name="yellow" if="$(eval robot_type == 'track_car')"/>
-            <material name="green" if="$(eval robot_type == 'target_car')"/>
+            <xacro:if value="$(arg robot_type) == 'track_car'">
+                <material name="yellow"/>
+            </xacro:if>
+            <xacro:if value="$(arg robot_type) == 'target_car'">
+                <material name="green"/>
+            </xacro:if>
         </visual>
         <collision>
             <geometry>
