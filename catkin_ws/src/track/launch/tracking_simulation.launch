@@ -1,13 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <launch>
-    <!-- Configure Gazebo GUI -->
+    <!-- Configure Gazebo -->
     <env name="GAZEBO_MODEL_PATH" value="$(find track)/models:$(optenv GAZEBO_MODEL_PATH)"/>
     <env name="SVGA_VGPU10" value="0"/>
     <env name="LIBGL_ALWAYS_SOFTWARE" value="1"/>
+    <env name="OGRE_RTT_MODE" value="Copy"/>
+    <env name="GAZEBO_GPU_RAY" value="0"/>
 
-    <!-- Simulation Environment -->
+    <!-- Simulation Server -->
     <node name="gazebo" pkg="gazebo_ros" type="gzserver" 
-          args="$(find track)/worlds/track.world" output="screen"
+          args="--verbose $(find track)/worlds/track.world" output="screen"
           required="true"/>
 
     <!-- Load robot descriptions -->
@@ -41,7 +43,7 @@
     <node name="track_state_publisher" pkg="robot_state_publisher" 
           type="robot_state_publisher" ns="track_car"/>
 
-    <!-- Spawn models with delay -->
+    <!-- Spawn models first -->
     <node name="spawn_target" pkg="gazebo_ros" type="spawn_model"
           args="-urdf -param /target_car/robot_description -model target_car 
                 -x 0.0 -y 0.0 -z 0.05" output="screen" 
@@ -52,11 +54,13 @@
                 -x -2.0 -y 0.0 -z 0.05" output="screen"
           ns="track_car" />
 
-    <!-- Start Gazebo GUI with delay -->
+    <!-- Start Gazebo GUI with more delay and environment settings -->
     <node name="gazebo_gui" pkg="gazebo_ros" type="gzclient" output="screen"
-          launch-prefix="bash -c 'sleep 5; $0 $@'" respawn="true"/>
+          launch-prefix="bash -c 'sleep 10; DISPLAY=:0 $0 $@'"
+          respawn="false"/>
 
     <!-- Visualization -->
     <node name="rviz" pkg="rviz" type="rviz" 
-          args="-d $(find track)/rviz/tracking.rviz"/>
+          args="-d $(find track)/rviz/tracking.rviz"
+          launch-prefix="bash -c 'sleep 2; $0 $@'"/>
 </launch>
