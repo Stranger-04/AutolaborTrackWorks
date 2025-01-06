@@ -62,26 +62,49 @@ def ExamByCamshift():
     term_crit = (cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT, 10, 1)
     
     try:
-        # 转换为HSV空间
+        # 显示深度信息
+        if hasattr(image_listenning, 'depth_image') and image_listenning.depth_image is not None:
+            depth_display = cv2.normalize(image_listenning.depth_image, None, 0, 255, cv2.NORM_MINMAX, dtype=cv2.CV_8U)
+            depth_color = cv2.applyColorMap(depth_display, cv2.COLORMAP_JET)
+            cv2.imshow('depth', depth_color)
+            
         hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
         
-        # 显示选择框
         if selectObject and ws > 0 and hs > 0:
+            # 显示选择框
             cv2.rectangle(display_img, (xs, ys), (xs+ws, ys+hs), (0, 255, 0), 2)
-            cv2.putText(display_img, "Selection: %dx%d" % (ws, hs), 
-                       (xs, ys-10), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
+            
+            # 如果有深度信息，显示选择区域的平均深度
+            if hasattr(image_listenning, 'depth_image') and image_listenning.depth_image is not None:
+                roi_depth = image_listenning.depth_image[ys:ys+hs, xs:xs+ws]
+                mean_depth = np.nanmean(roi_depth)
+                cv2.putText(display_img, "Depth: {:.2f}m".format(mean_depth), 
+                           (xs, ys-10), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
         
         # 目标跟踪处理
         if trackObject != 0:
-            # 设置HSV掩码范围
-            lower_bound = np.array((0., 0., 40.))
-            upper_bound = np.array((180., 255., 255.))
-            mask = cv2.inRange(hsv, lower_bound, upper_bound)
+            # 创建深度掩码
+            depth_mask = np.ones_like(mask, dtype=np.uint8) * 255
+            if hasattr(image_listenning, 'depth_image') and image_listenning.depth_image is not None:
+                # 使用深度范围过滤
+                target_depth = image_listenning.target_depth
+                depth_tolerance = 0.5  # 深度容差范围
+                depth_mask = cv2.inRange(
+                    image_listenning.depth_image,
+                    target_depth - depth_tolerance,
+                    target_depth + depth_tolerance
+                )
             
-            if trackObject == -1:  # 初始化跟踪
+            # 结合HSV和深度掩码
+            if trackObject == -1:
                 track_window = (int(xs), int(ys), int(ws), int(hs))
                 maskroi = mask[ys:ys + hs, xs:xs + ws]
                 hsv_roi = hsv[ys:ys + hs, xs:xs + ws]
+                
+                # 存储目标深度
+                if hasattr(image_listenning, 'depth_image') and image_listenning.depth_image is not None:
+                    roi_depth = image_listenning.depth_image[ys:ys+hs, xs:xs+ws]
+                    image_listenning.target_depth = np.nanmean(roi_depth)
                 
                 # 记录目标的HSV范围
                 rospy.loginfo("目标HSV范围 - H: %d-%d, S: %d-%d, V: %d-%d",
@@ -111,15 +134,21 @@ def ExamByCamshift():
                 cv2.normalize(roi_hist, roi_hist, 0, 255, cv2.NORM_MINMAX)
                 trackObject = 1
                 
-            # 执行反向投影
+            # 改进的目标跟踪
+            mask = cv2.inRange(hsv, lower_bound, upper_bound)
+            mask = cv2.bitwise_and(mask, depth_mask)
+            
             dst = cv2.calcBackProject([hsv], [0, 1, 2], roi_hist, [0, 180, 0, 256, 0, 256], 1)
-            dst &= mask
+            dst = cv2.bitwise_and(dst, mask)
             
-            # 添加形态学处理改善跟踪效果
-            kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3,3))
+            # 添加形态学处理
+            kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5,5))
             dst = cv2.filter2D(dst, -1, kernel)
+            dst = cv2.threshold(dst, 50, 255, cv2.THRESH_BINARY)[1]
+            dst = cv2.erode(dst, None, iterations=2)
+            dst = cv2.dilate(dst, None, iterations=2)
             
-            # 应用CamShift
+            # CamShift跟踪
             ret, track_window = cv2.CamShift(dst, track_window, term_crit)
             
             # 更新跟踪结果
@@ -132,7 +161,12 @@ def ExamByCamshift():
             cv2.polylines(display_img, [pts], True, (0, 0, 255), 2)
             cv2.circle(display_img, (int(centerX), int(ret[0][1])), 5, (0, 255, 255), -1)
             
-        # 显示图像
+            # 显示深度信息
+            if hasattr(image_listenning, 'depth_image'):
+                current_depth = image_listenning.current_depth
+                cv2.putText(display_img, "Current Depth: {:.2f}m".format(current_depth),
+                           (10, 120), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
+        
         cv2.imshow('imshow', display_img)
         cv2.waitKey(1)
         
@@ -287,19 +321,45 @@ class image_listenner:
             rospy.loginfo("Control - Error_x: %.2f, Size: %.2f, Speed: %.2f, Turn: %.2f" % 
                          (error_x, length, msg.linear.x, msg.angular.z))
         
+        # 使用深度信息进行更精确的控制
+        if self.current_depth is not None and self.target_depth is not None:
+            depth_error = self.current_depth - self.target_depth
+            
+            # 距离控制
+            if abs(depth_error) > self.distance_threshold:
+                speed = self.linear_x * np.clip(depth_error, -1, 1)
+                msg.linear.x = speed
+            
+            # 根据深度调整转向速度
+            distance_factor = min(self.current_depth / 2.0, 1.0)  # 距离越远，转向越慢
+            error_x = target_x - 320
+            if abs(error_x) > self.center_threshold:
+                msg.angular.z = self.angular_z * (error_x / 320.0) * distance_factor
+        
         return msg
 
     def depth_callback(self, msg):
         try:
-            depth_image = self.bridge.imgmsg_to_cv2(msg, "32FC1")
-            # 获取跟踪窗口中心点的深度值
+            self.depth_image = self.bridge.imgmsg_to_cv2(msg, "32FC1")
             if trackObject == 1:
                 x, y = int(track_window[0] + track_window[2]/2), int(track_window[1] + track_window[3]/2)
-                self.current_depth = depth_image[y, x]
-                if math.isnan(self.current_depth):
-                    self.current_depth = 0
-        except:
-            rospy.logerr("depth image processing failed")
+                depth = self.depth_image[y, x]
+                if not math.isnan(depth):
+                    self.current_depth = depth
+                    
+                    # 使用深度信息调整跟踪参数
+                    if self.target_depth is not None:
+                        depth_error = depth - self.target_depth
+                        # 根据深度差异调整跟踪窗口大小
+                        scale = self.target_depth / depth if depth > 0 else 1.0
+                        track_window = (
+                            track_window[0],
+                            track_window[1],
+                            int(track_window[2] * scale),
+                            int(track_window[3] * scale)
+                        )
+        except Exception as e:
+            rospy.logerr("深度图处理失败: %s", str(e))
 
     def image_sub_callback(self, msg):
         '''图像订阅回调函数'''
