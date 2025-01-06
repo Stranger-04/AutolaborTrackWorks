@@ -32,3 +32,8 @@ catkin_install_python(PROGRAMS
   scripts/vision_node.py
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
+
+add_custom_target(make_scripts_executable ALL
+  COMMAND chmod +x ${CMAKE_CURRENT_SOURCE_DIR}/scripts/vision_node.py
+  COMMENT "Making scripts executable"
+)
