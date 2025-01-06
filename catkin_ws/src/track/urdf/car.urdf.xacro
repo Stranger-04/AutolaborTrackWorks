@@ -16,6 +16,15 @@
         <color rgba="0 0 0 1"/>
     </material>
 
+    <!-- Add virtual root link -->
+    <link name="virtual_root"/>
+    
+    <joint name="virtual_joint" type="fixed">
+        <parent link="virtual_root"/>
+        <child link="base_link"/>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+    </joint>
+
     <!-- Main body link -->
     <link name="base_link">
         <inertial>
@@ -46,14 +55,6 @@
     </joint>
     
     <!-- Wheel link -->
-    <link name="wheel_1">
-        <inertial>
-            <mass value="0.1"/>
-            <origin xyz="0 0 0" rpy="0 0 0"/>
-            <inertia ixx="0.000375" ixy="0" ixz="0" iyy="0.000375" iyz="0" izz="0.00072"/>
-        </inertial>
-        <visual>
-            <geometry>
                 <cylinder radius="0.06" length="0.04"/>
             </geometry>
             <material name="black"/>
@@ -66,7 +67,7 @@
         <!-- ...existing code... -->
     </link>
     
-    <!-- 添加右轮关节 -->
+    <!-- Right wheel -->
     <joint name="wheel_2_joint" type="continuous">
         <parent link="base_link"/>
         <child link="wheel_2"/>
@@ -74,7 +75,7 @@
         <axis xyz="0 1 0"/>
     </joint>
     
-    <!-- 添加右轮连杆 -->
+    <!-- Right wheel link -->
     <link name="wheel_2">
         <inertial>
             <mass value="0.1"/>
@@ -156,6 +157,15 @@
             <publishWheelTF>false</publishWheelTF>
             <publishOdomTF>true</publishOdomTF>
             <publishWheelJointState>false</publishWheelJointState>
+            <wheelAcceleration>1.0</wheelAcceleration>
+            <wheelTorque>20</wheelTorque>
+            <odometrySource>world</odometrySource>
+            <updateRate>30</updateRate>
+        </plugin>
+    </gazebo>
+</robot>
+            <publishWheelJointState>false</publishWheelJointState>
+
             <wheelAcceleration>1.0</wheelAcceleration>
             <wheelTorque>20</wheelTorque>
             <odometrySource>world</odometrySource>
