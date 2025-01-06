@@ -54,100 +54,70 @@ def onMouse(event, x, y, flags, prams):
 ##################
 def ExamByCamshift():
     global xs, ys, ws, hs, selectObject, xo, yo, trackObject, image, roi_hist, track_window
-    display_img = image.copy()
+    
+    # 不创建display_img副本，直接在原图上操作，与cam_node保持一致
+    term_crit = (cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT, 10, 1)
+    hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
     centerX = -1.0
     length_of_diagonal = float()
     
-    try:
-        # 1. 基础HSV转换
-        hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
-        
-        # 2. 简单的HSV掩码 - 与cam_node保持一致
-        mask = cv2.inRange(hsv, np.array((0., 30., 10.)), np.array((180., 256., 255.)))
-        
-        # 3. 显示选择过程
-        if selectObject and ws > 0 and hs > 0:
-            cv2.rectangle(display_img, (xs, ys), (xs+ws, ys+hs), (0, 255, 0), 2)
-            cv2.bitwise_not(display_img[ys:ys + hs, xs:xs + ws], 
-                          display_img[ys:ys + hs, xs:xs + ws])
-        
-        # 4. 跟踪处理
-        if trackObject != 0:
-            if trackObject == -1:  # 初始化跟踪
-                track_window = (xs, ys, ws, hs)
-                hsv_roi = hsv[ys:ys + hs, xs:xs + ws]
-                maskroi = mask[ys:ys + hs, xs:xs + ws]
-                
-                # 使用与cam_node相同的直方图参数
-                roi_hist = cv2.calcHist([hsv_roi], [0], maskroi, [180], [0, 180])
-                cv2.normalize(roi_hist, roi_hist, 0, 255, cv2.NORM_MINMAX)
-                trackObject = 1
-            
-            # 5. 反向投影
-            dst = cv2.calcBackProject([hsv], [0], roi_hist, [0, 180], 1)
-            dst &= mask
-            
-            # 6. CamShift跟踪
-            term_crit = (cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT, 10, 1)
-            ret, track_window = cv2.CamShift(dst, track_window, term_crit)
-            
-            # 7. 绘制跟踪结果
-            centerX = float(ret[0][0])
-            pts = cv2.boxPoints(ret)
-            pts = np.int0(pts)
-            length_of_diagonal = math.sqrt(float(ret[1][1]) ** 2 + float(ret[1][0]) ** 2)
-            cv2.polylines(display_img, [pts], True, (0, 0, 255), 2)
-            
-            # 显示跟踪信息
-            cv2.putText(display_img, "Track: ({:.0f}, {:.0f})".format(centerX, ret[0][1]),
-                       (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
-        
-        cv2.imshow('imshow', display_img)
-        cv2.waitKey(1)
-        
-    except Exception as e:
-        rospy.logerr("跟踪失败: %s", str(e))
-        return -1.0, 0.0
+    # 处理框选
+    if selectObject and ws > 0 and hs > 0:
+        # 直接在原图上进行反色处理，这是关键
+        cv2.bitwise_not(image[ys:ys + hs, xs:xs + ws], image[ys:ys + hs, xs:xs + ws])
     
+    # 跟踪处理
+    if trackObject != 0:
+        mask = cv2.inRange(hsv, np.array((0., 30., 10.)), np.array((180., 256., 255.)))
+        if trackObject == -1:  # 初始化跟踪
+            track_window = (xs, ys, ws, hs)
+            maskroi = mask[ys:ys + hs, xs:xs + ws]
+            hsv_roi = hsv[ys:ys + hs, xs:xs + ws]
+            roi_hist = cv2.calcHist([hsv_roi], [0], maskroi, [180], [0, 180])
+            cv2.normalize(roi_hist, roi_hist, 0, 255, cv2.NORM_MINMAX)
+            trackObject = 1
+        
+        dst = cv2.calcBackProject([hsv], [0], roi_hist, [0, 180], 1)
+        dst &= mask
+        ret, track_window = cv2.CamShift(dst, track_window, term_crit)
+        centerX = ret[0][0]
+        pts = cv2.boxPoints(ret)
+        pts = np.int0(pts)
+        length_of_diagonal = math.sqrt(float(ret[1][1]) ** 2 + float(ret[1][0]) ** 2)
+        cv2.polylines(image, [pts], True, (0, 0, 255), 2)
+        
+    # 直接显示原图
+    cv2.imshow('imshow', image)
     return centerX, length_of_diagonal
 
 class image_listenner:
     def __init__(self):
-        # 使用与cam_node相同的参数
+        # 完全使用cam_node的参数设置
         self.threshold = 120
         self.linear_x = 0.4
         self.angular_z = 0.10
         self.track_windows_threshold = math.sqrt(95*95+235*235)+10000
         
-        try:
-            # 简化窗口创建
-            cv2.namedWindow('imshow', cv2.WINDOW_NORMAL)
-            cv2.setMouseCallback('imshow', onMouse)
-            
-            self.bridge = CvBridge()
-            rospy.loginfo("等待相机初始化...")
-            
-            # 简化话题订阅
-            self.image_sub = rospy.Subscriber("camera/image_raw", 
-                                            Image, 
-                                            self.image_sub_callback,
-                                            queue_size=1)
-            self.twist_pub = rospy.Publisher("cmd_vel", Twist, queue_size=10)
-            
-        except Exception as e:
-            rospy.logerr("初始化失败: %s", str(e))
-            raise
-
+        # 简化初始化
+        cv2.namedWindow('imshow', cv2.WINDOW_NORMAL)
+        cv2.setMouseCallback('imshow', onMouse)
+        self.bridge = CvBridge()
+        
+        # 修正话题名
+        self.image_sub = rospy.Subscriber("/track_car/camera/image_raw", 
+                                        Image, 
+                                        self.image_sub_callback)
+        self.twist_pub = rospy.Publisher("cmd_vel", Twist, queue_size=10)
+    
     def image_sub_callback(self, msg):
         global image
         try:
-            cv_image = self.bridge.imgmsg_to_cv2(msg, "bgr8")
-            image = cv_image.copy()
-            
+            # 直接使用原图，不创建副本
+            image = self.bridge.imgmsg_to_cv2(msg, "bgr8")
             track_centerX, length_of_diagonal = ExamByCamshift()
             windows_centerX = 320
             
-            # 使用与cam_node相同的控制逻辑
+            # 简化控制逻辑
             if track_centerX >= 0:
                 if abs(track_centerX - windows_centerX) > self.threshold:
                     if track_centerX < windows_centerX:
@@ -159,8 +129,6 @@ class image_listenner:
                         self.go_ahead()
                     else:
                         self.stop_move()
-            else:
-                rospy.loginfo("等待选择目标区域")
             
             cv2.waitKey(3)
             
