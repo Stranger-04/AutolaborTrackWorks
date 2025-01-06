@@ -1,12 +1,28 @@
 Panels:
   - Class: rviz/Displays
+    Help Height: 78
     Name: Displays
     Property Tree Widget:
-      Expanded:
-        - /Global Options1
-        - /TF1/Frames1
       Splitter Ratio: 0.5
-    Tree Height: 565
+      Tree Height: 775
+    Tree By Name: false
+  - Class: rviz/Selection
+    Name: Selection
+  - Class: rviz/Tool Properties
+    Expanded: ~
+    Name: Tool Properties
+    Splitter Ratio: 0.5886790156364441
+  - Class: rviz/Views
+    Expanded:
+      - /Current View1
+    Name: Views
+    Splitter Ratio: 0.5
+  - Class: rviz/Time
+    Experimental: false
+    Name: Time
+    SyncMode: 0
+    SyncSource: ""
+
 Visualization Manager:
   Class: ""
   Displays:
@@ -36,3 +52,20 @@ Visualization Manager:
       Name: Track Odometry
       Topic: /track_car/odom
       Color: 0; 255; 0
+
+Displays:
+  - Class: rviz/TF
+    Enabled: true
+    Frame Timeout: 15
+    Name: TF
+    Show Arrows: true
+    Show Axes: true
+    Show Names: true
+  - Class: rviz/RobotModel
+    Enabled: true
+    Name: Target Car
+    Robot Description: target_car/robot_description
+  - Class: rviz/RobotModel
+    Enabled: true
+    Name: Track Car
+    Robot Description: track_car/robot_description
