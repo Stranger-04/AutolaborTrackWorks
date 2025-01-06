@@ -7,7 +7,7 @@ import rospy
 import cv2
 from cv_bridge import CvBridge
 from sensor_msgs.msg import Image
-import numpy np
+import numpy as np  # 修复了numpy导入语句
 import math
 from geometry_msgs.msg import Twist
 xs, ys, ws, hs = 0, 0, 0, 0  # selection.x selection.y
