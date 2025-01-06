@@ -3,9 +3,9 @@
 # 视觉跟踪节点：通过OpenCV进行目标选择和方向计算
 #############
 import rospy
-import cv_bridge
-from sensor_msgs.msg import Image
 import cv2
+from cv_bridge import CvBridge
+from sensor_msgs.msg import Image
 import numpy as np
 import math
 from geometry_msgs.msg import Twist
@@ -93,7 +93,7 @@ class image_listenner:
         rospy.loginfo("等待图像加载...")
         
         # 初始化bridge和订阅器
-        self.bridge = cv_bridge.CvBridge()
+        self.bridge = CvBridge()
         # 订阅仿真环境中的相机图像
         self.image_sub = rospy.Subscriber("/track_car/camera/image_raw", 
                                         Image, 
