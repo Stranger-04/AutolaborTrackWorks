@@ -89,30 +89,52 @@ class image_listenner:
         self.smooth_factor = 0.3  # 平滑因子
         
         try:
+            # 初始化ROS节点和参数
+            rospy.loginfo("等待相机初始化...")
+            
             # 修改窗口创建方式
             cv2.namedWindow('imshow', cv2.WINDOW_AUTOSIZE)
             cv2.moveWindow('imshow', 100, 100)
             cv2.setMouseCallback('imshow', onMouse)
-            rospy.loginfo("Initializing image viewer...")
             
-            # 修改订阅话题
+            # 初始化bridge和订阅器
             self.bridge = CvBridge()
-            self.image_sub = rospy.Subscriber("/track_car/camera/image_raw", 
-                                            Image, 
-                                            self.image_sub_callback,
-                                            queue_size=1,
-                                            buff_size=2**24)  # 增加缓冲区大小
-            self.depth_sub = rospy.Subscriber("/camera/depth/image_raw", 
+            
+            # 确保使用正确的话题名
+            camera_topic = "camera/image_raw"  # 相对命名空间
+            rospy.loginfo("订阅相机话题: %s", camera_topic)
+            
+            # 订阅相机图像，增加超时重试机制
+            retry_count = 0
+            while not rospy.is_shutdown() and retry_count < 3:
+                try:
+                    self.image_sub = rospy.Subscriber(camera_topic, 
+                                                    Image, 
+                                                    self.image_sub_callback,
+                                                    queue_size=1,
+                                                    buff_size=2**24)
+                    
+                    # 等待第一帧图像
+                    rospy.wait_for_message(camera_topic, Image, timeout=2.0)
+                    rospy.loginfo("成功接收到相机图像")
+                    break
+                except Exception as e:
+                    retry_count += 1
+                    rospy.logwarn("等待相机图像超时，重试 %d/3...", retry_count)
+                    rospy.sleep(1)
+            
+            if retry_count >= 3:
+                raise Exception("无法接收相机图像，请检查相机话题是否正确")
+            
+            # 其他订阅器初始化
+            self.depth_sub = rospy.Subscriber("camera/depth/image_raw", 
                                             Image, 
                                             self.depth_callback,
                                             queue_size=1)
             self.twist_pub = rospy.Publisher("cmd_vel", Twist, queue_size=1)
             
-            # 等待第一帧图像
-            rospy.wait_for_message("/track_car/camera/image_raw", Image, timeout=5.0)
-            
         except Exception as e:
-            rospy.logerr("Init failed: %s", str(e))
+            rospy.logerr("初始化失败: %s", str(e))
             raise
 
         self.start_auto_detect()
