@@ -1,0 +1,23 @@
+<?xml version="1.0"?>
+<launch>
+    <!-- 直接启动gazebo和空世界 -->
+    <node name="gazebo" pkg="gazebo_ros" type="gazebo" output="screen"/>
+
+    <!-- 核心功能节点 -->
+    <node name="keyboard_control" pkg="track" type="keyboard_control" output="screen" ns="target_car">
+        <remap from="cmd_vel" to="cmd_vel"/>
+    </node>
+
+    <node name="tracking_node" pkg="track" type="tracking_node" output="screen" ns="track_car">
+        <param name="max_linear_speed" value="0.5"/>
+        <param name="max_angular_speed" value="1.0"/>
+        <param name="min_distance" value="0.5"/>
+        <param name="desired_distance" value="1.0"/>
+        <remap from="cmd_vel" to="cmd_vel"/>
+        <remap from="target/odom" to="/target_car/odom"/>
+        <remap from="odom" to="odom"/>
+    </node>
+
+    <!-- 可视化 -->
+    <node name="track_rviz" pkg="rviz" type="rviz"/>
+</launch>
