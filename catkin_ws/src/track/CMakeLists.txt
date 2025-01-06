@@ -27,3 +27,8 @@ target_link_libraries(tracking_node
 target_link_libraries(keyboard_control
   ${catkin_LIBRARIES}
 )
+
+catkin_install_python(PROGRAMS
+  scripts/vision_node.py
+  DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)
