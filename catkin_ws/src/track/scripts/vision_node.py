@@ -70,8 +70,10 @@ def ExamByCamshift():
         length_of_diagonal = math.sqrt(ret[1][1] ** 2 + ret[1][0] ** 2)
         img2 = cv2.polylines(image, [pts], True, 255, 2)
     if selectObject == True and ws > 0 and hs > 0:
-        #cv2.imshow('imshow1', image[ys:ys + hs, xs:xs + ws])
-        cv2.bitwise_not(image[ys:ys + hs, xs:xs + ws], image[ys:ys + hs, xs:xs + ws])
+        # 显示选择区域的反转效果
+        temp = image.copy()
+        cv2.rectangle(temp, (xs, ys), (xs+ws, ys+hs), (0, 255, 0), 2)
+        image = temp
     cv2.imshow('imshow', image)
 
     return centerX, length_of_diagonal
@@ -87,6 +89,7 @@ class image_listenner:
         self.distance_threshold = 0.2
         self.prev_centerX = 320  # 添加目标位置历史记录
         self.smooth_factor = 0.3  # 平滑因子
+        self.current_depth = 0  # 添加depth属性初始化
         
         try:
             # 初始化ROS节点和参数
@@ -205,11 +208,16 @@ class image_listenner:
             # 转换和显示图像
             cv_image = self.bridge.imgmsg_to_cv2(msg, "bgr8")
             image = cv_image.copy()
+            display_image = image.copy()  # 创建显示用的副本
             
             if not trackObject:
-                cv2.putText(image, "Click and drag to select target", 
+                cv2.putText(display_image, "请点击并拖动鼠标选择跟踪目标", 
                           (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 
                           0.7, (0, 255, 0), 2)
+                
+                # 显示当前选择框
+                if selectObject and ws > 0 and hs > 0:
+                    cv2.rectangle(display_image, (xs, ys), (xs+ws, ys+hs), (0, 255, 0), 2)
                 
             track_centerX, length_of_diagonal = ExamByCamshift()
             
@@ -218,11 +226,14 @@ class image_listenner:
                 control_msg = self.calculate_control(predicted_x, self.current_depth)
                 self.twist_pub.publish(control_msg)
             
-            cv2.imshow('imshow', image)
-            cv2.waitKey(3)
+            # 显示图像
+            cv2.imshow('imshow', display_image)
+            key = cv2.waitKey(3) & 0xFF
+            if key == 27:  # ESC键退出
+                rospy.signal_shutdown("User requested shutdown")
             
         except Exception as e:
-            rospy.logerr("Image processing failed: %s", str(e))
+            rospy.logerr("图像处理失败: %s", str(e))
 
     def turn_left(self):
         rospy.loginfo("cam_turn_left")
