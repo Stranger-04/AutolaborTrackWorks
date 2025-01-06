@@ -1,9 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <launch>
+    <!-- Configure Gazebo GUI -->
+    <env name="GAZEBO_MODEL_PATH" value="$(find track)/models:$(optenv GAZEBO_MODEL_PATH)"/>
+    <env name="SVGA_VGPU10" value="0"/>
+    <env name="LIBGL_ALWAYS_SOFTWARE" value="1"/>
+
     <!-- Simulation Environment -->
     <node name="gazebo" pkg="gazebo_ros" type="gzserver" 
-          args="$(find track)/worlds/track.world" output="screen"/>
-    <node name="gazebo_gui" pkg="gazebo_ros" type="gzclient" output="screen"/>
+          args="$(find track)/worlds/track.world" output="screen"
+          required="true"/>
 
     <!-- Load robot descriptions -->
     <group ns="target_car">
@@ -46,6 +51,10 @@
           args="-urdf -param /track_car/robot_description -model track_car
                 -x -2.0 -y 0.0 -z 0.05" output="screen"
           ns="track_car" />
+
+    <!-- Start Gazebo GUI with delay -->
+    <node name="gazebo_gui" pkg="gazebo_ros" type="gzclient" output="screen"
+          launch-prefix="bash -c 'sleep 5; $0 $@'" respawn="true"/>
 
     <!-- Visualization -->
     <node name="rviz" pkg="rviz" type="rviz" 
