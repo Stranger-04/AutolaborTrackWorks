@@ -1,58 +1,48 @@
 <?xml version="1.0"?>
 <launch>
-    <!-- 启动Gazebo仿真环境 -->
-    <include file="$(find gazebo_ros)/launch/empty_world.launch">
-        <arg name="world_name" value="$(find track)/worlds/track.world"/>
-        <arg name="gui" value="true"/>
-        <arg name="paused" value="false"/>
-        <arg name="use_sim_time" value="true"/>
-    </include>
+    <!-- 启动仿真环境 -->
+    <node name="gazebo" pkg="gazebo_ros" type="gazebo" 
+          args="$(find track)/worlds/track.world" output="screen"/>
 
-    <!-- 加载机器人模型描述 -->
-    <param name="robot_description" 
-           command="$(find xacro)/xacro $(find track)/urdf/car.urdf.xacro" />
-
-    <!-- 生成两辆车 -->
-    <!-- 被跟踪的目标车 -->
+    <!-- 加载机器人描述参数 -->
     <group ns="target_car">
-        <param name="tf_prefix" value="target_car"/>
-        <include file="$(find gazebo_ros)/launch/spawn_model.launch">
-            <arg name="model_name" value="target_car"/>
-            <arg name="model_urdf" value="$(find track)/urdf/car.urdf.xacro"/>
-            <arg name="x" value="0"/>
-            <arg name="y" value="0"/>
-        </include>
+        <param name="robot_description" 
+               command="$(find xacro)/xacro '$(find track)/urdf/car.urdf.xacro'" />
+        <node name="spawn_model" pkg="gazebo_ros" type="spawn_model"
+              args="-urdf -param robot_description -model target_car 
+                    -x 0.0 -y 0.0 -z 0.0" output="screen" />
     </group>
 
-    <!-- 跟踪车 -->
     <group ns="track_car">
-        <param name="tf_prefix" value="track_car"/>
-        <include file="$(find gazebo_ros)/launch/spawn_model.launch">
-            <arg name="model_name" value="track_car"/>
-            <arg name="model_urdf" value="$(find track)/urdf/car.urdf.xacro"/>
-            <arg name="x" value="-2"/>
-            <arg name="y" value="0"/>
-        </include>
+        <param name="robot_description" 
+               command="$(find xacro)/xacro '$(find track)/urdf/car.urdf.xacro'" />
+        <node name="spawn_model" pkg="gazebo_ros" type="spawn_model"
+              args="-urdf -param robot_description -model track_car 
+                    -x -2.0 -y 0.0 -z 0.0" output="screen" />
     </group>
 
-    <!-- 启动视觉跟踪节点 -->
-    <node name="vision_node" pkg="track" type="vision_node.py" output="screen">
-        <remap from="/usb_cam/image_raw" to="/track_car/camera/image_raw"/>
+    <!-- 核心功能节点 -->
+    <node name="keyboard_control" pkg="track" type="keyboard_control" output="screen" ns="target_car">
+        <remap from="cmd_vel" to="cmd_vel"/>
     </node>
 
-    <!-- 键盘控制节点 -->
-    <node name="teleop_twist_keyboard" pkg="teleop_twist_keyboard" 
-          type="teleop_twist_keyboard.py" output="screen">
-        <remap from="cmd_vel" to="/target_car/cmd_vel"/>
+    <node name="tracking_node" pkg="track" type="tracking_node" output="screen" ns="track_car">
+        <param name="max_linear_speed" value="0.5"/>
+        <param name="max_angular_speed" value="1.0"/>
+        <param name="min_distance" value="0.5"/>
+        <param name="desired_distance" value="1.0"/>
+        <remap from="cmd_vel" to="cmd_vel"/>
+        <remap from="target/odom" to="/target_car/odom"/>
+        <remap from="odom" to="odom"/>
     </node>
 
-    <!-- 添加robot_state_publisher -->
+    <!-- robot_state_publisher -->
     <node name="target_state_publisher" pkg="robot_state_publisher" 
           type="robot_state_publisher" ns="target_car"/>
     <node name="track_state_publisher" pkg="robot_state_publisher" 
           type="robot_state_publisher" ns="track_car"/>
 
-    <!-- RViz可视化 -->
-    <node name="rviz" pkg="rviz" type="rviz" 
+    <!-- 可视化 -->
+    <node name="track_rviz" pkg="rviz" type="rviz" 
           args="-d $(find track)/rviz/tracking.rviz"/>
 </launch>
