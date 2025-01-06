@@ -58,8 +58,8 @@ def ExamByCamshift():
     # 显示实时选择框
     if selectObject and ws > 0 and hs > 0:
         cv2.rectangle(display_img, (xs, ys), (xs+ws, ys+hs), (0, 255, 0), 2)
-        cv2.putText(display_img, f"Selection: {ws}x{hs}", (xs, ys-10), 
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
+        cv2.putText(display_img, "Selection: {}x{}".format(ws, hs), 
+                    (xs, ys-10), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
     
     # 目标跟踪处理
     if trackObject != 0:
@@ -88,7 +88,7 @@ def ExamByCamshift():
         # 显示跟踪框和中心点
         cv2.polylines(display_img, [pts], True, (0, 0, 255), 2)
         cv2.circle(display_img, (int(centerX), int(ret[0][1])), 5, (0, 255, 255), -1)
-        cv2.putText(display_img, f"Tracking: ({int(centerX)}, {int(ret[0][1])})", 
+        cv2.putText(display_img, "Tracking: ({}, {})".format(int(centerX), int(ret[0][1])), 
                     (10, 450), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 255), 2)
     
     cv2.imshow('imshow', display_img)
@@ -228,7 +228,7 @@ class image_listenner:
             
             # 添加状态显示
             status_text = "选择目标" if not trackObject else "跟踪中"
-            cv2.putText(image, f"状态: {status_text}", (10, 30), 
+            cv2.putText(image, "状态: {}".format(status_text), (10, 30), 
                         cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
             
             # 处理跟踪
