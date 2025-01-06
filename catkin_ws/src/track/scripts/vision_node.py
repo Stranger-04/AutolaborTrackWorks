@@ -54,105 +54,123 @@ def onMouse(event, x, y, flags, prams):
 ##################
 def ExamByCamshift():
     global xs, ys, ws, hs, selectObject, xo, yo, trackObject, image, roi_hist, track_window
-    
-    # 添加调试信息
-    print_debug = True  # 用于调试的开关
+    term_crit = (cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT, 10, 1)
+    hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
     centerX = -1.0
     length_of_diagonal = float()
-    
+
     try:
-        hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
+        # 显示当前图像尺寸和模式
+        rospy.loginfo("图像尺寸: %dx%d", image.shape[1], image.shape[0])
         
         # 处理框选
         if selectObject and ws > 0 and hs > 0:
+            # 显示选择框
+            cv2.rectangle(image, (xs, ys), (xs+ws, ys+hs), (0, 255, 0), 2)
+            # 反色显示选择区域
             cv2.bitwise_not(image[ys:ys + hs, xs:xs + ws], image[ys:ys + hs, xs:xs + ws])
-            if print_debug:
-                rospy.loginfo("框选区域: x=%d, y=%d, w=%d, h=%d", xs, ys, ws, hs)
-        
+            rospy.loginfo("选择区域: x=%d, y=%d, w=%d, h=%d", xs, ys, ws, hs)
+
         # 跟踪处理
         if trackObject != 0:
-            mask = cv2.inRange(hsv, np.array((0., 30., 10.)), np.array((180., 256., 255.)))
+            # 创建掩码
+            mask = cv2.inRange(hsv, np.array((0., 60., 32.)), np.array((180., 255., 255.)))
             
-            if trackObject == -1:  # 初始化跟踪
-                track_window = (xs, ys, ws, hs)
-                maskroi = mask[ys:ys + hs, xs:xs + ws]
-                hsv_roi = hsv[ys:ys + hs, xs:xs + ws]
-                roi_hist = cv2.calcHist([hsv_roi], [0], maskroi, [180], [0, 180])
-                cv2.normalize(roi_hist, roi_hist, 0, 255, cv2.NORM_MINMAX)
-                trackObject = 1
-                if print_debug:
-                    rospy.loginfo("初始化跟踪窗口: (%d,%d) %dx%d", xs, ys, ws, hs)
+            if trackObject == -1:  # 初始化追踪
+                # 确保选择区域有效
+                if ws > 0 and hs > 0:
+                    track_window = (xs, ys, ws, hs)
+                    roi_mask = mask[ys:ys + hs, xs:xs + ws]
+                    roi_hsv = hsv[ys:ys + hs, xs:xs + ws]
+                    
+                    # 计算ROI区域的HSV直方图
+                    roi_hist = cv2.calcHist([roi_hsv], [0], roi_mask, [180], [0, 180])
+                    cv2.normalize(roi_hist, roi_hist, 0, 255, cv2.NORM_MINMAX)
+                    
+                    # 输出ROI区域的HSV范围
+                    rospy.loginfo("ROI HSV范围 - H: %d-%d, S: %d-%d, V: %d-%d",
+                                np.min(roi_hsv[:,:,0]), np.max(roi_hsv[:,:,0]),
+                                np.min(roi_hsv[:,:,1]), np.max(roi_hsv[:,:,1]),
+                                np.min(roi_hsv[:,:,2]), np.max(roi_hsv[:,:,2]))
+                    
+                    trackObject = 1
             
-            dst = cv2.calcBackProject([hsv], [0], roi_hist, [0, 180], 1)
-            dst &= mask
-            
-            term_crit = (cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT, 10, 1)
-            ret, track_window = cv2.CamShift(dst, track_window, term_crit)
-            centerX = float(ret[0][0])
-            
-            # 添加跟踪结果调试信息
-            if print_debug:
-                rospy.loginfo("跟踪结果 - Center: (%.1f, %.1f), Box: %dx%d", 
-                            ret[0][0], ret[0][1], ret[1][0], ret[1][1])
-            
-            pts = cv2.boxPoints(ret)
-            pts = np.int0(pts)
-            length_of_diagonal = math.sqrt(float(ret[1][1]) ** 2 + float(ret[1][0]) ** 2)
-            cv2.polylines(image, [pts], True, (0, 0, 255), 2)
-            
-            # 显示中心点和跟踪框
-            cv2.circle(image, (int(centerX), int(ret[0][1])), 5, (0, 255, 255), -1)
-            cv2.putText(image, "Center: ({:.0f}, {:.0f})".format(centerX, ret[0][1]),
-                       (int(centerX)-50, int(ret[0][1])-20), 
-                       cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 255), 2)
-        
+            if trackObject == 1:  # 执行追踪
+                # 计算反向投影
+                dst = cv2.calcBackProject([hsv], [0], roi_hist, [0, 180], 1)
+                dst &= mask
+                
+                # 应用CamShift
+                ret, track_window = cv2.CamShift(dst, track_window, term_crit)
+                
+                # 检查跟踪结果是否有效
+                if track_window[2] > 0 and track_window[3] > 0:
+                    centerX = float(ret[0][0])
+                    pts = cv2.boxPoints(ret)
+                    pts = np.int0(pts)
+                    length_of_diagonal = math.sqrt(float(ret[1][1]) ** 2 + float(ret[1][0]) ** 2)
+                    
+                    # 绘制跟踪结果
+                    cv2.polylines(image, [pts], True, (0, 0, 255), 2)
+                    cv2.circle(image, (int(centerX), int(ret[0][1])), 5, (0, 255, 255), -1)
+                    
+                    # 显示跟踪信息
+                    rospy.loginfo("跟踪位置: (%.1f, %.1f), 大小: %.1f", centerX, ret[0][1], length_of_diagonal)
+                else:
+                    rospy.logwarn("跟踪窗口无效")
+                    centerX = -1.0
+
         cv2.imshow('imshow', image)
         cv2.waitKey(3)
         
     except Exception as e:
         rospy.logerr("跟踪失败: %s", str(e))
         return -1.0, 0.0
-        
+    
     return centerX, length_of_diagonal
 
 class image_listenner:
     def __init__(self):
-        # 调整控制参数
-        self.threshold = 50  # 降低阈值使转向不那么敏感
-        self.linear_x = 0.2  # 降低速度
-        self.angular_z = 0.1  # 降低转向速度
+        # 调整参数
+        self.threshold = 80  # 增加阈值
+        self.linear_x = 0.3
+        self.angular_z = 0.2
         self.track_windows_threshold = math.sqrt(95*95+235*235)+10000
         
-        # 简化初始化
+        # 初始化
         cv2.namedWindow('imshow', cv2.WINDOW_NORMAL)
+        cv2.resizeWindow('imshow', 800, 600)
         cv2.setMouseCallback('imshow', onMouse)
         self.bridge = CvBridge()
         
-        # 修正话题名
+        # 订阅相机话题
         self.image_sub = rospy.Subscriber("/track_car/camera/image_raw", 
                                         Image, 
-                                        self.image_sub_callback)
-        self.twist_pub = rospy.Publisher("cmd_vel", Twist, queue_size=10)
-    
+                                        self.image_sub_callback,
+                                        queue_size=1)
+        self.twist_pub = rospy.Publisher("cmd_vel", Twist, queue_size=1)
+
     def image_sub_callback(self, msg):
         global image
         try:
             image = self.bridge.imgmsg_to_cv2(msg, "bgr8")
-            track_centerX, length_of_diagonal = ExamByCamshift()
-            windows_centerX = 320
-            
-            if track_centerX >= 0:
-                error = track_centerX - windows_centerX
+            # 确保图像正确接收
+            if image is None or image.size == 0:
+                rospy.logerr("接收到无效图像")
+                return
                 
-                # 添加调试信息
-                rospy.loginfo("Control - Center: %.1f, Error: %.1f, Threshold: %d", 
+            track_centerX, length_of_diagonal = ExamByCamshift()
+            windows_centerX = image.shape[1] // 2  # 使用图像实际中心点
+            
+            if track_centerX > 0:  # 只在有效跟踪时控制
+                error = track_centerX - windows_centerX
+                rospy.loginfo("控制 - 中心: %.1f, 误差: %.1f, 阈值: %d", 
                             track_centerX, error, self.threshold)
                 
-                # 修改控制逻辑
                 if abs(error) > self.threshold:
-                    if error < 0:  # 目标在左边
+                    if error < 0:
                         self.turn_right()
-                    else:  # 目标在右边
+                    else:
                         self.turn_left()
                 else:
                     if length_of_diagonal < self.track_windows_threshold:
