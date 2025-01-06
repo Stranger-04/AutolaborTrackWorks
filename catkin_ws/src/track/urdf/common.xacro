@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+    <!-- 常量定义 -->
+    <xacro:property name="pi" value="3.1415926"/>
+    
+    <!-- 默认惯性参数宏 -->
+    <xacro:macro name="default_inertial" params="mass">
+        <inertial>
+            <mass value="${mass}"/>
+            <origin xyz="0 0 0" rpy="0 0 0"/>
+            <inertia 
+                ixx="${mass * 0.0833333}" ixy="0.0" ixz="0.0"
+                iyy="${mass * 0.0833333}" iyz="0.0"
+                izz="${mass * 0.0833333}"/>
+        </inertial>
+    </xacro:macro>
+    
+    <!-- 材质定义 -->
+    <material name="white">
+        <color rgba="1 1 1 1"/>
+    </material>
+</robot>

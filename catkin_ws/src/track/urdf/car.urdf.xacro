@@ -135,10 +135,11 @@
         </sensor>
     </gazebo>
 
+    <!-- 修改差速驱动插件配置 -->
     <gazebo>
         <plugin name="differential_drive_controller" filename="libgazebo_ros_diff_drive.so">
-            <leftJoint>wheel_1_joint</leftJoint>
-            <rightJoint>wheel_2_joint</rightJoint>
+            <leftJoint>front_left_wheel_joint</leftJoint>
+            <rightJoint>front_right_wheel_joint</rightJoint>
             <robotNamespace>$(arg robot_type)</robotNamespace>
             <wheelSeparation>0.3</wheelSeparation>
             <wheelDiameter>0.12</wheelDiameter>
