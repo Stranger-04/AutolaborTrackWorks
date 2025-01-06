@@ -89,8 +89,10 @@ class image_listenner:
         self.smooth_factor = 0.3  # 平滑因子
         
         try:
-            # 创建并初始化窗口
-            cv2.namedWindow('imshow')
+            # 确保在主线程中创建窗口
+            cv2.startWindowThread()
+            cv2.namedWindow('imshow', cv2.WINDOW_NORMAL)
+            cv2.resizeWindow('imshow', 640, 480)
             cv2.setMouseCallback('imshow', onMouse)
             rospy.loginfo("等待图像加载...")
             
@@ -179,7 +181,7 @@ class image_listenner:
 
         try:
             self.img = self.bridge.imgmsg_to_cv2(msg, "bgr8")
-            image = self.img
+            image = self.img.copy()  # 创建图像副本防止数据竞争
             
             # 显示提示框
             if not trackObject:
@@ -194,13 +196,11 @@ class image_listenner:
                 predicted_x = self.predict_target_position(track_centerX)
                 control_msg = self.calculate_control(predicted_x, self.current_depth)
                 self.twist_pub.publish(control_msg)
-            else:
-                rospy.loginfo("Finding target...")
-                
-            cv2.setMouseCallback('imshow', onMouse)
-            cv2.waitKey(3)
-        except:
-            rospy.logerr("img get failed")
+            
+            cv2.imshow('imshow', image)
+            cv2.waitKey(1)  # 改为1ms等待
+        except Exception as e:
+            rospy.logerr("图像处理失败: %s", str(e))
 
 
     def turn_left(self):
