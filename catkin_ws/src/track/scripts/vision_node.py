@@ -149,15 +149,92 @@ def ExamByCamshift():
         
     return centerX, length_of_diagonal
 
+def ExamByCamshift():
+    global xs, ys, ws, hs, selectObject, xo, yo, trackObject, image, roi_hist, track_window
+    display_img = image.copy()
+    
+    try:
+        # 修改HSV参数范围以更好地识别车辆
+        hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
+        if trackObject != 0:
+            # 扩大HSV范围以适应不同光照条件
+            lower_bound = np.array((0., 0., 40.))  # 降低饱和度要求，提高亮度下限
+            upper_bound = np.array((180., 255., 255.))
+            mask = cv2.inRange(hsv, lower_bound, upper_bound)
+            
+            if trackObject == -1:
+                track_window = (int(xs), int(ys), int(ws), int(hs))
+                maskroi = mask[ys:ys + hs, xs:xs + ws]
+                hsv_roi = hsv[ys:ys + hs, xs:xs + ws]
+                
+                # 使用所有HSV通道进行跟踪
+                roi_hist = cv2.calcHist([hsv_roi], [0, 1, 2], maskroi, [32, 32, 32], [0, 180, 0, 256, 0, 256])
+                cv2.normalize(roi_hist, roi_hist, 0, 255, cv2.NORM_MINMAX)
+                trackObject = 1
+                
+                # 显示ROI区域的HSV直方图
+                rospy.loginfo("目标区域 HSV 范围 - H: %d-%d, S: %d-%d, V: %d-%d",
+                            np.min(hsv_roi[:,:,0]), np.max(hsv_roi[:,:,0]),
+                            np.min(hsv_roi[:,:,1]), np.max(hsv_roi[:,:,1]),
+                            np.min(hsv_roi[:,:,2]), np.max(hsv_roi[:,:,2]))
+            
+            # 改进反向投影
+            dst = cv2.calcBackProject([hsv], [0, 1, 2], roi_hist, [0, 180, 0, 256, 0, 256], 1)
+            
+            # 添加图像预处理
+            kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3,3))
+            dst = cv2.filter2D(dst, -1, kernel)
+            dst = cv2.threshold(dst, 50, 255, cv2.THRESH_BINARY)[1]
+            dst = cv2.erode(dst, None, iterations=2)
+            dst = cv2.dilate(dst, None, iterations=2)
+            
+            # 应用camshift
+            ret, track_window = cv2.CamShift(dst, track_window, term_crit)
+            
+            # 验证跟踪结果
+            if track_window[2] * track_window[3] == 0:
+                rospy.logwarn("跟踪窗口大小为零，重置跟踪")
+                trackObject = 0
+                return -1.0, 0.0
+                
+            # 显示跟踪结果
+            pts = cv2.boxPoints(ret)
+            pts = np.int0(pts)
+            centerX = float(ret[0][0])
+            length_of_diagonal = math.sqrt(float(ret[1][1]) ** 2 + float(ret[1][0]) ** 2)
+            
+            # 绘制跟踪框和中心点
+            cv2.polylines(display_img, [pts], True, (0, 0, 255), 2)
+            cv2.circle(display_img, (int(centerX), int(ret[0][1])), 5, (0, 255, 255), -1)
+            
+            # 显示调试信息
+            cv2.putText(display_img, "Size: %.0fx%.0f" % (ret[1][0], ret[1][1]),
+                       (int(centerX)-30, int(ret[0][1])-20),
+                       cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 255), 2)
+            
+            # 添加跟踪质量检查
+            track_quality = cv2.meanStdDev(dst[int(ret[0][1]-ret[1][1]/2):int(ret[0][1]+ret[1][1]/2),
+                                             int(centerX-ret[1][0]/2):int(centerX+ret[1][0]/2)])[0][0]
+            if track_quality < 30:  # 跟踪质量过低
+                rospy.logwarn("跟踪质量低: %.2f", track_quality)
+            
+        # ...existing code...
+        
+    except Exception as e:
+        rospy.logerr("跟踪处理失败: %s", str(e))
+        return -1.0, 0.0
+    
+    return centerX, length_of_diagonal
+
 class image_listenner:
     def __init__(self):
         # 初始化Publisher
         self.twist_pub = None  # 将在初始化完成后创建
         
         # 调整控制参数
-        self.threshold = 80
-        self.linear_x = 0.3  # 前进速度
-        self.angular_z = 0.5  # 转向速度
+        self.threshold = 50  # 降低阈值，提高响应性
+        self.linear_x = 0.2  # 降低速度使运动更平滑
+        self.angular_z = 0.3
         self.distance_factor = 0.001  # 距离系数
         self.target_size = 150  # 目标大小（像素）
         self.min_size = 50  # 最小目标大小
@@ -174,8 +251,8 @@ class image_listenner:
         
         # 跟踪相关参数
         self.track_lost_count = 0
-        self.max_track_lost = 30  # 最大丢失帧数
-        self.min_target_size = 20  # 最小目标大小
+        self.max_track_lost = 10  # 降低最大丢失帧数
+        self.min_target_size = 30  # 降低最小目标大小阈值
         
         try:
             # 初始化ROS节点和参数
