@@ -11,10 +11,15 @@
         <arg name="use_sim_time" value="true"/>
         <arg name="headless" value="false"/>
         <arg name="debug" value="false"/>
-        <!-- 添加显示相关参数 -->
+        <!-- 修改显示相关参数 -->
         <env name="GAZEBO_MODEL_PATH" value="$(find track)/models:$(optenv GAZEBO_MODEL_PATH)"/>
         <env name="DISPLAY" value=":0"/>
         <env name="LIBGL_ALWAYS_SOFTWARE" value="1"/>
+        <env name="SVGA_VGPU10" value="0"/>
+        <env name="GAZEBO_GPU_RAY" value="0"/>
+        <!-- 降低性能以提高稳定性 -->
+        <env name="OGRE_RTT_MODE" value="Copy"/>
+        <env name="GAZEBO_CMT_THREAD_COUNT" value="1"/>
     </include>
 
     <!-- 加载机器人描述参数 -->
