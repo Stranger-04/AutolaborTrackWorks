@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
 #############
 # 视觉跟踪节点：通过OpenCV进行目标选择和方向计算
 #############
@@ -87,23 +88,39 @@ class image_listenner:
         self.prev_centerX = 320  # 添加目标位置历史记录
         self.smooth_factor = 0.3  # 平滑因子
         
-        # 创建并初始化窗口
-        cv2.namedWindow('imshow')
-        cv2.setMouseCallback('imshow', onMouse)
-        rospy.loginfo("等待图像加载...")
-        
-        # 初始化bridge和订阅器
-        self.bridge = CvBridge()
-        # 订阅仿真环境中的相机图像
-        self.image_sub = rospy.Subscriber("/track_car/camera/image_raw", 
-                                        Image, 
-                                        self.image_sub_callback)
-        self.depth_sub = rospy.Subscriber("/camera/depth/image_raw", Image, self.depth_callback)
-        self.twist_pub = rospy.Publisher("/cmd_vel", Twist, queue_size=10)
-        
-        self.current_depth = 0
-        self.window_created = False
+        try:
+            # 创建并初始化窗口
+            cv2.namedWindow('imshow')
+            cv2.setMouseCallback('imshow', onMouse)
+            rospy.loginfo("等待图像加载...")
+            
+            # 初始化bridge和订阅器
+            self.bridge = CvBridge()
+            # 修改订阅话题名称以匹配实际配置
+            self.image_sub = rospy.Subscriber("/track_car/camera/image_raw", 
+                                            Image, 
+                                            self.image_sub_callback,
+                                            queue_size=1)
+            self.depth_sub = rospy.Subscriber("/camera/depth/image_raw", 
+                                            Image, 
+                                            self.depth_callback,
+                                            queue_size=1)
+            self.twist_pub = rospy.Publisher("/cmd_vel", Twist, queue_size=1)
+            
+            self.current_depth = 0
+            self.window_created = False
+            
+        except Exception as e:
+            rospy.logerr("初始化失败: %s", str(e))
+            raise
+
         self.start_auto_detect()
+
+    def __del__(self):
+        try:
+            cv2.destroyAllWindows()
+        except:
+            pass
 
     def start_auto_detect(self):
         """自动开始目标检测"""
@@ -215,27 +232,11 @@ def callback(twist):
     print (twist.linear.x)
     print(1)
 if __name__ == '__main__':
-    rospy.init_node('image_listenner', anonymous=False)
-    # rospy.Subscriber("/cmd_vel",Twist,callback)
-    # while(True):
-    #     rospy.spin()
-    # rate = 50
-    # r = rospy.Rate(rate)
-    #
-    # msg = Twist()
-    # msg.linear.x = 1
-    # msg.linear.y = 0
-    # msg.linear.z = 0
-    # msg.angular.x = 0
-    # msg.angular.y = 0
-    # msg.angular.z = 0
-    # pub = rospy.Publisher("/cmd_vel",Twist,queue_size=1)
-    # while(True):
-    #     pub.publish(msg)
-    #     r.sleep()
-    image_listenning = image_listenner()
-    #movebase = MoveBase()
     try:
+        rospy.init_node('image_listenner', anonymous=False)
+        image_listenning = image_listenner()
         rospy.spin()
-    except KeyboardInterrupt:
-        print("Shutting down")
+    except Exception as e:
+        rospy.logerr("节点运行出错: %s", str(e))
+    finally:
+        cv2.destroyAllWindows()
