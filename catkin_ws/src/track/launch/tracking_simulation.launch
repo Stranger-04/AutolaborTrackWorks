@@ -1,24 +1,35 @@
-<?xml version="1.0"?>
+<?xml version="1.0" encoding="UTF-8"?>
 <launch>
     <!-- 启动仿真环境 -->
-    <node name="gazebo" pkg="gazebo_ros" type="gazebo" 
+    <node name="gazebo" pkg="gazebo_ros" type="gzserver" 
           args="$(find track)/worlds/track.world" output="screen"/>
+    <node name="gazebo_gui" pkg="gazebo_ros" type="gzclient" output="screen"/>
 
     <!-- 加载机器人描述参数 -->
     <group ns="target_car">
         <param name="robot_description" 
-               command="$(find xacro)/xacro '$(find track)/urdf/car.urdf.xacro'" />
+               command="$(find xacro)/xacro --inorder '$(find track)/urdf/car.urdf.xacro' 
+                       robot_namespace:=target_car" />
+    </group>
+    <group ns="track_car">
+        <param name="robot_description" 
+               command="$(find xacro)/xacro --inorder '$(find track)/urdf/car.urdf.xacro' 
+                       robot_namespace:=track_car" />
+    </group>
+
+    <!-- 延迟启动模型生成 -->
+    <group ns="target_car">
         <node name="spawn_model" pkg="gazebo_ros" type="spawn_model"
               args="-urdf -param robot_description -model target_car 
-                    -x 0.0 -y 0.0 -z 0.0" output="screen" />
+                    -x 0.0 -y 0.0 -z 0.05" output="screen" 
+              launch-prefix="bash -c 'sleep 5.0; $0 $@'" />
     </group>
 
     <group ns="track_car">
-        <param name="robot_description" 
-               command="$(find xacro)/xacro '$(find track)/urdf/car.urdf.xacro'" />
         <node name="spawn_model" pkg="gazebo_ros" type="spawn_model"
               args="-urdf -param robot_description -model track_car 
-                    -x -2.0 -y 0.0 -z 0.0" output="screen" />
+                    -x -2.0 -y 0.0 -z 0.05" output="screen"
+              launch-prefix="bash -c 'sleep 7.0; $0 $@'" />
     </group>
 
     <!-- 核心功能节点 -->

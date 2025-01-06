@@ -1,6 +1,7 @@
 <?xml version="1.0"?>
 <robot name="car" xmlns:xacro="http://www.ros.org/wiki/xacro">
-    <!-- ...existing code... -->
+    <!-- 传入命名空间参数 -->
+    <xacro:arg name="robot_namespace" default=""/>
     
     <!-- 修改材质颜色 -->
     <material name="yellow">
@@ -11,7 +12,7 @@
         <color rgba="0 1 0 1"/>
     </material>
 
-    <!-- 车身部分 -->
+    <!-- 主体链接 -->
     <link name="base_link">
         <visual>
             <geometry>
@@ -22,6 +23,13 @@
         <!-- ...existing code... -->
     </link>
 
+    <!-- 车轮链接 -->
+    <joint name="wheel_1_joint" type="continuous">
+        <parent link="base_link"/>
+        <child link="wheel_1"/>
+        <!-- ...existing code... -->
+    </joint>
+    
     <!-- 车轮部分 -->
     <link name="wheel_1">
         <visual>
