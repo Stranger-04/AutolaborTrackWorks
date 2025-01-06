@@ -1,9 +1,9 @@
 <?xml version="1.0"?>
 <robot xmlns:xacro="http://www.ros.org/wiki/xacro">
-    <!-- 常量定义 -->
-    <xacro:property name="pi" value="3.1415926"/>
+    <!-- Constants -->
+    <!-- pi is already defined in xacro, no need to redefine -->
     
-    <!-- 默认惯性参数宏 -->
+    <!-- Default inertial macro -->
     <xacro:macro name="default_inertial" params="mass">
         <inertial>
             <mass value="${mass}"/>
@@ -15,7 +15,7 @@
         </inertial>
     </xacro:macro>
     
-    <!-- 材质定义 -->
+    <!-- Materials -->
     <material name="white">
         <color rgba="1 1 1 1"/>
     </material>
