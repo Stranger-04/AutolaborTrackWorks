@@ -57,7 +57,7 @@ def ExamByCamshift():
     
     # 显示实时选择框
     if selectObject and ws > 0 and hs > 0:
-        cv2.rectangle(display_img, (xs, ys), (xs+ws, ys+hs), (0, 255, 0), 2)
+        cv2.rectangle(display_img, (xs, ys), (xs+ws), (ys+hs), (0, 255, 0), 2)
         cv2.putText(display_img, "Selection: {}x{}".format(ws, hs), 
                     (xs, ys-10), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
     
@@ -72,7 +72,7 @@ def ExamByCamshift():
             cv2.normalize(roi_hist, roi_hist, 0, 255, cv2.NORM_MINMAX)
             trackObject = 1
             # 显示选中区域
-            cv2.rectangle(display_img, (xs, ys), (xs+ws, ys+hs), (255, 0, 0), 2)
+            cv2.rectangle(display_img, (xs, ys), (xs+ws), (ys+hs), (255, 0, 0), 2)
             cv2.putText(display_img, "Target Selected", (xs, ys-10), 
                         cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 0, 0), 2)
         
@@ -96,16 +96,15 @@ def ExamByCamshift():
 
 class image_listenner:
     def __init__(self):
-        # 基本参数设置
-        self.threshold = 80  # 降低阈值提高灵敏度
-        self.linear_x = 0.3  # 降低速度使运动更平滑
-        self.angular_z = 0.15
-        self.track_windows_threshold = math.sqrt(95*95+235*235)+10000
-        self.target_distance = 1.2  # 增加跟随距离
-        self.distance_threshold = 0.2
-        self.prev_centerX = 320  # 添加目标位置历史记录
-        self.smooth_factor = 0.3  # 平滑因子
-        self.current_depth = 0  # 添加depth属性初始化
+        # 调整控制参数
+        self.threshold = 80
+        self.linear_x = 0.2  # 降低线速度使运动更稳定
+        self.angular_z = 0.3  # 增加角速度提高转向灵敏度
+        self.target_distance = 1.0  # 目标跟随距离
+        self.distance_threshold = 0.1  # 降低阈值提高精度
+        self.prev_centerX = 320
+        self.smooth_factor = 0.5  # 增加平滑因子提高响应性
+        self.current_depth = 0
         
         try:
             # 初始化ROS节点和参数
@@ -190,18 +189,32 @@ class image_listenner:
         msg = Twist()
         windows_centerX = 320
         
-        # 方向控制
+        # 方向控制 - 基于目标在图像中的位置
         error_x = target_x - windows_centerX
-        msg.angular.z = self.angular_z * (error_x / windows_centerX)
+        # 增加非线性控制以提高响应性
+        if abs(error_x) > 100:  # 大偏差时快速转向
+            msg.angular.z = self.angular_z * 1.5 * (error_x / windows_centerX)
+        else:  # 小偏差时精细调整
+            msg.angular.z = self.angular_z * (error_x / windows_centerX)
         
-        # 速度控制
+        # 速度控制 - 基于深度信息
         if depth > 0:
             error_distance = depth - self.target_distance
             speed_factor = min(abs(error_distance), 1.0)
-            if error_distance > self.distance_threshold:
-                msg.linear.x = -self.linear_x * speed_factor
-            elif error_distance < -self.distance_threshold:
-                msg.linear.x = self.linear_x * speed_factor
+            
+            if abs(error_distance) > self.distance_threshold:
+                if error_distance > 0:  # 目标太远
+                    msg.linear.x = self.linear_x * speed_factor
+                else:  # 目标太近
+                    msg.linear.x = -self.linear_x * speed_factor
+            else:  # 在合适距离内停止
+                msg.linear.x = 0.0
+                
+            # 当转向时降低前进速度
+            msg.linear.x *= (1 - abs(msg.angular.z))
+            
+            rospy.loginfo("Control: distance={:.2f}, speed={:.2f}, turn={:.2f}".format(
+                         depth, msg.linear.x, msg.angular.z))
         
         return msg
 
@@ -226,7 +239,7 @@ class image_listenner:
             cv_image = self.bridge.imgmsg_to_cv2(msg, "bgr8")
             image = cv_image.copy()
             
-            # 添加状态显示
+            # 添加状态和调试信息显示
             status_text = "选择目标" if not trackObject else "跟踪中"
             cv2.putText(image, "状态: {}".format(status_text), (10, 30), 
                         cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
@@ -234,12 +247,22 @@ class image_listenner:
             # 处理跟踪
             track_centerX, length_of_diagonal = ExamByCamshift()
             
-            if track_centerX >= 0:
+            if track_centerX >= 0 and trackObject == 1:  # 确保处于跟踪状态
                 predicted_x = self.predict_target_position(track_centerX)
                 control_msg = self.calculate_control(predicted_x, self.current_depth)
+                
+                # 添加调试信息显示
+                cv2.putText(image, "Target X: {:.1f}, Depth: {:.2f}m".format(
+                           predicted_x, self.current_depth), (10, 60),
+                           cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
+                
+                # 发布控制命令
                 self.twist_pub.publish(control_msg)
+            else:
+                # 未跟踪时停止移动
+                self.stop_move()
             
-            # 确保窗口刷新
+            # 确保显示更新
             cv2.waitKey(1)
             
         except Exception as e:
