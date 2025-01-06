@@ -7,7 +7,7 @@ import rospy
 import cv2
 from cv_bridge import CvBridge
 from sensor_msgs.msg import Image
-import numpy as np
+import numpy np
 import math
 from geometry_msgs.msg import Twist
 xs, ys, ws, hs = 0, 0, 0, 0  # selection.x selection.y
@@ -55,50 +55,67 @@ def ExamByCamshift():
     centerX = -1.0
     length_of_diagonal = float()
     
-    # 修正rectangle参数
+    # 显示选择过程中的框选区域
     if selectObject and ws > 0 and hs > 0:
+        # 实时显示选择框
         cv2.rectangle(display_img, (int(xs), int(ys)), 
                      (int(xs+ws), int(ys+hs)), (0, 255, 0), 2)
-        cv2.putText(display_img, "Selection: {}x{}".format(int(ws), int(hs)), 
-                    (int(xs), int(ys-10)), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
     
     # 目标跟踪处理
     if trackObject != 0:
         try:
-            mask = cv2.inRange(hsv, np.array((0., 30., 10.)), np.array((180., 256., 255.)))
+            # 增加HSV掩码范围，提高跟踪稳定性
+            mask = cv2.inRange(hsv, np.array((0., 20., 30.)), np.array((180., 255., 255.)))
+            
             if trackObject == -1:  # 初次选择目标
                 track_window = (int(xs), int(ys), int(ws), int(hs))
                 maskroi = mask[ys:ys + hs, xs:xs + ws]
                 hsv_roi = hsv[ys:ys + hs, xs:xs + ws]
-                roi_hist = cv2.calcHist([hsv_roi], [0], maskroi, [180], [0, 180])
+                
+                # 使用多个通道计算直方图，提高特征区分度
+                channels = [0, 1]  # 使用H和S通道
+                ranges = [0, 180, 0, 256]  # H和S通道的范围
+                roi_hist = cv2.calcHist([hsv_roi], channels, maskroi, [180, 256], ranges)
                 cv2.normalize(roi_hist, roi_hist, 0, 255, cv2.NORM_MINMAX)
                 trackObject = 1
                 
-                # 显示选中区域
+                # 显示已选择的区域
                 cv2.rectangle(display_img, (int(xs), int(ys)), 
                             (int(xs+ws), int(ys+hs)), (255, 0, 0), 2)
-                cv2.putText(display_img, "Target Selected", (int(xs), int(ys-10)), 
-                            cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 0, 0), 2)
+                cv2.putText(display_img, "Target Locked", (int(xs), int(ys-10)), 
+                           cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 0, 0), 2)
             
             # 执行跟踪
-            dst = cv2.calcBackProject([hsv], [0], roi_hist, [0, 180], 1)
+            dst = cv2.calcBackProject([hsv], [0, 1], roi_hist, [0, 180, 0, 256], 1)
             dst &= mask
+            
+            # 应用均值漂移跟踪
             ret, track_window = cv2.CamShift(dst, track_window, term_crit)
             
-            # 确保返回值为整数
-            centerX = float(ret[0][0])
+            # 更新跟踪结果
             pts = cv2.boxPoints(ret)
             pts = np.int0(pts)
+            centerX = float(ret[0][0])
             length_of_diagonal = math.sqrt(float(ret[1][1]) ** 2 + float(ret[1][0]) ** 2)
             
-            # 显示跟踪框和中心点
+            # 绘制跟踪框和中心点
             cv2.polylines(display_img, [pts], True, (0, 0, 255), 2)
             cv2.circle(display_img, (int(centerX), int(ret[0][1])), 5, (0, 255, 255), -1)
-            cv2.putText(display_img, "Tracking: ({}, {})".format(int(centerX), int(ret[0][1])), 
-                        (10, 450), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 255), 2)
+            
+            # 显示跟踪信息
+            cv2.putText(display_img, "Tracking: ({:.0f}, {:.0f})".format(centerX, ret[0][1]), 
+                       (10, display_img.shape[0]-20), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 255), 2)
+            
         except Exception as e:
             rospy.logerr("跟踪处理失败: %s", str(e))
-            trackObject = 0
+            # 跟踪失败时不重置trackObject，保持跟踪状态
+            centerX = -1.0
+            length_of_diagonal = 0.0
+    
+    # 显示操作提示
+    if not trackObject:
+        cv2.putText(display_img, "Click and drag to select target", 
+                   (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
     
     cv2.imshow('imshow', display_img)
     return centerX, length_of_diagonal
@@ -110,13 +127,26 @@ class image_listenner:
         
         # 调整控制参数
         self.threshold = 80
-        self.linear_x = 0.2  # 降低线速度使运动更稳定
-        self.angular_z = 0.3  # 增加角速度提高转向灵敏度
+        self.linear_x = 0.3  # 前进速度
+        self.angular_z = 0.5  # 转向速度
+        self.distance_factor = 0.001  # 距离系数
+        self.target_size = 150  # 目标大小（像素）
+        self.min_size = 50  # 最小目标大小
+        self.max_size = 250  # 最大目标大小
+        
+        # 控制阈值
+        self.center_threshold = 30  # 中心点偏差阈值
+        self.size_threshold = 20  # 大小偏差阈值
         self.target_distance = 1.0  # 目标跟随距离
         self.distance_threshold = 0.1  # 降低阈值提高精度
         self.prev_centerX = 320
         self.smooth_factor = 0.5  # 增加平滑因子提高响应性
         self.current_depth = 0
+        
+        # 跟踪相关参数
+        self.track_lost_count = 0
+        self.max_track_lost = 30  # 最大丢失帧数
+        self.min_target_size = 20  # 最小目标大小
         
         try:
             # 初始化ROS节点和参数
@@ -196,37 +226,41 @@ class image_listenner:
         self.prev_centerX = current_x
         return predicted_x
 
-    def calculate_control(self, target_x, depth):
-        """计算更平滑的控制输出"""
+    def calculate_control(self, target_x, length):
+        """计算控制命令"""
         msg = Twist()
-        windows_centerX = 320
+        center_x = 320  # 图像中心x坐标
         
-        # 方向控制 - 基于目标在图像中的位置
-        error_x = target_x - windows_centerX
-        # 增加非线性控制以提高响应性
-        if abs(error_x) > 100:  # 大偏差时快速转向
-            msg.angular.z = self.angular_z * 1.5 * (error_x / windows_centerX)
-        else:  # 小偏差时精细调整
-            msg.angular.z = self.angular_z * (error_x / windows_centerX)
+        # 计算水平偏差
+        error_x = target_x - center_x
         
-        # 速度控制 - 基于深度信息
-        if depth > 0:
-            error_distance = depth - self.target_distance
-            speed_factor = min(abs(error_distance), 1.0)
+        # 方向控制
+        if abs(error_x) > self.center_threshold:
+            # 根据偏差大小非线性调整转向速度
+            turn_factor = min(abs(error_x) / center_x, 1.0)
+            msg.angular.z = self.angular_z * turn_factor * (error_x / abs(error_x))
+        
+        # 距离控制
+        if length > 0:
+            # 使用目标大小估算距离
+            size_error = length - self.target_size
             
-            if abs(error_distance) > self.distance_threshold:
-                if error_distance > 0:  # 目标太远
-                    msg.linear.x = self.linear_x * speed_factor
-                else:  # 目标太近
-                    msg.linear.x = -self.linear_x * speed_factor
-            else:  # 在合适距离内停止
-                msg.linear.x = 0.0
+            if abs(size_error) > self.size_threshold:
+                # 根据目标大小决定前进后退
+                if size_error < 0:  # 目标太小，需要前进
+                    msg.linear.x = self.linear_x
+                else:  # 目标太大，需要后退
+                    msg.linear.x = -self.linear_x
                 
-            # 当转向时降低前进速度
-            msg.linear.x *= (1 - abs(msg.angular.z))
+                # 根据偏差大小调整速度
+                speed_factor = min(abs(size_error) / self.target_size, 1.0)
+                msg.linear.x *= speed_factor
             
-            rospy.loginfo("Control: distance={:.2f}, speed={:.2f}, turn={:.2f}".format(
-                         depth, msg.linear.x, msg.angular.z))
+            # 当转向时降低速度
+            msg.linear.x *= (1.0 - 0.5 * abs(msg.angular.z))
+            
+            rospy.loginfo("Control - Error_x: {:.2f}, Size: {:.2f}, Speed: {:.2f}, Turn: {:.2f}".format(
+                         error_x, length, msg.linear.x, msg.angular.z))
         
         return msg
 
@@ -244,7 +278,7 @@ class image_listenner:
 
     def image_sub_callback(self, msg):
         '''图像订阅回调函数'''
-        global image
+        global image, trackObject
 
         try:
             # 转换和显示图像
@@ -259,20 +293,25 @@ class image_listenner:
             # 处理跟踪
             track_centerX, length_of_diagonal = ExamByCamshift()
             
-            if track_centerX >= 0 and trackObject == 1:  # 确保处于跟踪状态
+            if track_centerX >= 0 and length_of_diagonal > self.min_target_size:
+                self.track_lost_count = 0  # 重置丢失计数
                 predicted_x = self.predict_target_position(track_centerX)
-                control_msg = self.calculate_control(predicted_x, self.current_depth)
+                control_msg = self.calculate_control(predicted_x, length_of_diagonal)
                 
                 # 添加调试信息显示
-                cv2.putText(image, "Target X: {:.1f}, Depth: {:.2f}m".format(
-                           predicted_x, self.current_depth), (10, 60),
+                cv2.putText(image, "Target X: {:.1f}, Size: {:.1f}".format(
+                           predicted_x, length_of_diagonal), (10, 60),
+                           cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
+                cv2.putText(image, "Control - Turn: {:.2f}, Speed: {:.2f}".format(
+                           control_msg.angular.z, control_msg.linear.x), (10, 90),
                            cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
                 
                 # 发布控制命令
                 self.twist_pub.publish(control_msg)
             else:
-                # 未跟踪时停止移动
-                self.stop_move()
+                self.track_lost_count += 1
+                if self.track_lost_count > self.max_track_lost:
+                    self.stop_move()
             
             # 确保显示更新
             cv2.waitKey(1)
