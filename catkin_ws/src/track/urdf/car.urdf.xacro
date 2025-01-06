@@ -1,9 +1,9 @@
-<?xml version="1.0"?>
+<?xml version="1.0" encoding="UTF-8"?>
 <robot name="car" xmlns:xacro="http://www.ros.org/wiki/xacro">
-    <!-- 传入命名空间参数 -->
+    <!-- Robot namespace parameter -->
     <xacro:arg name="robot_namespace" default=""/>
     
-    <!-- 修改材质颜色 -->
+    <!-- Materials -->
     <material name="yellow">
         <color rgba="1 1 0 1"/>
     </material>
@@ -12,7 +12,7 @@
         <color rgba="0 1 0 1"/>
     </material>
 
-    <!-- 主体链接 -->
+    <!-- Main body link -->
     <link name="base_link">
         <visual>
             <geometry>
@@ -23,14 +23,14 @@
         <!-- ...existing code... -->
     </link>
 
-    <!-- 车轮链接 -->
+    <!-- Wheel joint -->
     <joint name="wheel_1_joint" type="continuous">
         <parent link="base_link"/>
         <child link="wheel_1"/>
         <!-- ...existing code... -->
     </joint>
     
-    <!-- 车轮部分 -->
+    <!-- Wheel link -->
     <link name="wheel_1">
         <visual>
             <geometry>
@@ -41,10 +41,10 @@
         <!-- ...existing code... -->
     </link>
     
-    <!-- 其他车轮同样修改为绿色 -->
+    <!-- Other wheels are also green -->
     <!-- ...existing code... -->
 
-    <!-- 添加相机链接 -->
+    <!-- Camera link -->
     <link name="camera_link">
         <visual>
             <geometry>
@@ -54,14 +54,14 @@
         </visual>
     </link>
 
-    <!-- 相机关节 -->
+    <!-- Camera joint -->
     <joint name="camera_joint" type="fixed">
         <parent link="base_link"/>
         <child link="camera_link"/>
         <origin xyz="0.2 0 0.1" rpy="0 0 0"/>
     </joint>
 
-    <!-- 添加相机插件 -->
+    <!-- Camera plugin -->
     <gazebo reference="camera_link">
         <sensor type="camera" name="camera">
             <update_rate>30.0</update_rate>
