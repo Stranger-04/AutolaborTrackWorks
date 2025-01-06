@@ -55,47 +55,59 @@ def ExamByCamshift():
     centerX = -1.0
     length_of_diagonal = float()
     
-    # 显示实时选择框
+    # 修正rectangle参数
     if selectObject and ws > 0 and hs > 0:
-        cv2.rectangle(display_img, (xs, ys), (xs+ws), (ys+hs), (0, 255, 0), 2)
-        cv2.putText(display_img, "Selection: {}x{}".format(ws, hs), 
-                    (xs, ys-10), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
+        cv2.rectangle(display_img, (int(xs), int(ys)), 
+                     (int(xs+ws), int(ys+hs)), (0, 255, 0), 2)
+        cv2.putText(display_img, "Selection: {}x{}".format(int(ws), int(hs)), 
+                    (int(xs), int(ys-10)), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
     
     # 目标跟踪处理
     if trackObject != 0:
-        mask = cv2.inRange(hsv, np.array((0., 30., 10.)), np.array((180., 256., 255.)))
-        if trackObject == -1:  # 初次选择目标
-            track_window = (xs, ys, ws, hs)
-            maskroi = mask[ys:ys + hs, xs:xs + ws]
-            hsv_roi = hsv[ys:ys + hs, xs:xs + ws]
-            roi_hist = cv2.calcHist([hsv_roi], [0], maskroi, [180], [0, 180])
-            cv2.normalize(roi_hist, roi_hist, 0, 255, cv2.NORM_MINMAX)
-            trackObject = 1
-            # 显示选中区域
-            cv2.rectangle(display_img, (xs, ys), (xs+ws), (ys+hs), (255, 0, 0), 2)
-            cv2.putText(display_img, "Target Selected", (xs, ys-10), 
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 0, 0), 2)
-        
-        # 执行跟踪
-        dst = cv2.calcBackProject([hsv], [0], roi_hist, [0, 180], 1)
-        dst &= mask
-        ret, track_window = cv2.CamShift(dst, track_window, term_crit)
-        pts = cv2.boxPoints(ret)
-        pts = np.int0(pts)
-        centerX = ret[0][0]
-        length_of_diagonal = math.sqrt(ret[1][1] ** 2 + ret[1][0] ** 2)
-        
-        # 显示跟踪框和中心点
-        cv2.polylines(display_img, [pts], True, (0, 0, 255), 2)
-        cv2.circle(display_img, (int(centerX), int(ret[0][1])), 5, (0, 255, 255), -1)
-        cv2.putText(display_img, "Tracking: ({}, {})".format(int(centerX), int(ret[0][1])), 
-                    (10, 450), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 255), 2)
+        try:
+            mask = cv2.inRange(hsv, np.array((0., 30., 10.)), np.array((180., 256., 255.)))
+            if trackObject == -1:  # 初次选择目标
+                track_window = (int(xs), int(ys), int(ws), int(hs))
+                maskroi = mask[ys:ys + hs, xs:xs + ws]
+                hsv_roi = hsv[ys:ys + hs, xs:xs + ws]
+                roi_hist = cv2.calcHist([hsv_roi], [0], maskroi, [180], [0, 180])
+                cv2.normalize(roi_hist, roi_hist, 0, 255, cv2.NORM_MINMAX)
+                trackObject = 1
+                
+                # 显示选中区域
+                cv2.rectangle(display_img, (int(xs), int(ys)), 
+                            (int(xs+ws), int(ys+hs)), (255, 0, 0), 2)
+                cv2.putText(display_img, "Target Selected", (int(xs), int(ys-10)), 
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 0, 0), 2)
+            
+            # 执行跟踪
+            dst = cv2.calcBackProject([hsv], [0], roi_hist, [0, 180], 1)
+            dst &= mask
+            ret, track_window = cv2.CamShift(dst, track_window, term_crit)
+            
+            # 确保返回值为整数
+            centerX = float(ret[0][0])
+            pts = cv2.boxPoints(ret)
+            pts = np.int0(pts)
+            length_of_diagonal = math.sqrt(float(ret[1][1]) ** 2 + float(ret[1][0]) ** 2)
+            
+            # 显示跟踪框和中心点
+            cv2.polylines(display_img, [pts], True, (0, 0, 255), 2)
+            cv2.circle(display_img, (int(centerX), int(ret[0][1])), 5, (0, 255, 255), -1)
+            cv2.putText(display_img, "Tracking: ({}, {})".format(int(centerX), int(ret[0][1])), 
+                        (10, 450), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 255), 2)
+        except Exception as e:
+            rospy.logerr("跟踪处理失败: %s", str(e))
+            trackObject = 0
     
     cv2.imshow('imshow', display_img)
     return centerX, length_of_diagonal
 
 class image_listenner:
     def __init__(self):
+        # 初始化Publisher
+        self.twist_pub = None  # 将在初始化完成后创建
+        
         # 调整控制参数
         self.threshold = 80
         self.linear_x = 0.2  # 降低线速度使运动更稳定
@@ -279,9 +291,11 @@ class image_listenner:
         msg.angular.z = self.angular_z
         self.twist_pub.publish(msg)
     def stop_move(self):
-        rospy.loginfo("find_target")
-        msg = Twist()
-        self.twist_pub.publish(msg)
+        """停止移动"""
+        if hasattr(self, 'twist_pub') and self.twist_pub is not None:
+            rospy.loginfo("find_target")
+            msg = Twist()
+            self.twist_pub.publish(msg)
     def go_ahead(self):
         rospy.loginfo("moving ahead")
         msg = Twist()
