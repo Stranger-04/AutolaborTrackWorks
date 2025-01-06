@@ -2,7 +2,7 @@
 <launch>
     <!-- 启动仿真环境 -->
     <include file="$(find gazebo_ros)/launch/empty_world.launch">
-        <arg name="world_name" value="$(find track)/worlds/track.world"/>
+        <arg name="world_name" value="$(find track)/worlds/track_world.world"/>
         <arg name="paused" value="false"/>
         <arg name="gui" value="true"/>
     </include>
@@ -42,5 +42,5 @@
     </node>
 
     <!-- 可视化 -->
-    <node name="track_rviz" pkg="rviz" type="rviz" args="-d $(find track)/rviz/tracking.rviz"/>
+    <node name="track_rviz" pkg="rviz" type="rviz" args="-d $(find track)/rviz/tracking_simulation.rviz"/>
 </launch>

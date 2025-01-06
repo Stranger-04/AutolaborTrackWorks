@@ -12,6 +12,10 @@
         <color rgba="0 1 0 1"/>
     </material>
 
+    <material name="black">
+        <color rgba="0 0 0 1"/>
+    </material>
+
     <!-- Main body link -->
     <link name="base_link">
         <inertial>
@@ -23,7 +27,12 @@
             <geometry>
                 <box size="0.5 0.3 0.1"/>
             </geometry>
-            <material name="yellow"/>
+            <xacro:if value="${robot_namespace == 'target_car'}">
+                <material name="green"/>
+            </xacro:if>
+            <xacro:if value="${robot_namespace == 'track_car'}">
+                <material name="yellow"/>
+            </xacro:if>
         </visual>
         <collision>
             <geometry>
@@ -51,7 +60,7 @@
             <geometry>
                 <cylinder radius="0.06" length="0.04"/>
             </geometry>
-            <material name="green"/>
+            <material name="black"/>
         </visual>
         <collision>
             <geometry>
@@ -61,6 +70,34 @@
         <!-- ...existing code... -->
     </link>
     
+    <!-- 添加右轮关节 -->
+    <joint name="wheel_2_joint" type="continuous">
+        <parent link="base_link"/>
+        <child link="wheel_2"/>
+        <origin xyz="0 -0.15 -0.05" rpy="0 0 0"/>
+        <axis xyz="0 1 0"/>
+    </joint>
+    
+    <!-- 添加右轮连杆 -->
+    <link name="wheel_2">
+        <inertial>
+            <mass value="0.1"/>
+            <origin xyz="0 0 0" rpy="0 0 0"/>
+            <inertia ixx="0.000375" ixy="0" ixz="0" iyy="0.000375" iyz="0" izz="0.00072"/>
+        </inertial>
+        <visual>
+            <geometry>
+                <cylinder radius="0.06" length="0.04"/>
+            </geometry>
+            <material name="black"/>
+        </visual>
+        <collision>
+            <geometry>
+                <cylinder radius="0.06" length="0.04"/>
+            </geometry>
+        </collision>
+    </link>
+
     <!-- Other wheels are also green -->
     <!-- ...existing code... -->
 
