@@ -70,6 +70,15 @@ def ExamByCamshift():
             
         hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
         
+        # 初始化深度相关变量
+        depth_mask = None
+        mask = None
+        
+        # 设置基础HSV范围
+        lower_bound = np.array((0., 20., 30.))
+        upper_bound = np.array((180., 255., 255.))
+        mask = cv2.inRange(hsv, lower_bound, upper_bound)
+        
         if selectObject and ws > 0 and hs > 0:
             # 显示选择框
             cv2.rectangle(display_img, (xs, ys), (xs+ws, ys+hs), (0, 255, 0), 2)
@@ -339,13 +348,15 @@ class image_listenner:
         return msg
 
     def depth_callback(self, msg):
+        global track_window
         try:
             self.depth_image = self.bridge.imgmsg_to_cv2(msg, "32FC1")
-            if trackObject == 1:
+            if trackObject == 1 and 'track_window' in globals():
                 x, y = int(track_window[0] + track_window[2]/2), int(track_window[1] + track_window[3]/2)
-                depth = self.depth_image[y, x]
-                if not math.isnan(depth):
-                    self.current_depth = depth
+                if 0 <= y < self.depth_image.shape[0] and 0 <= x < self.depth_image.shape[1]:
+                    depth = self.depth_image[y, x]
+                    if not math.isnan(depth):
+                        self.current_depth = depth
                     
                     # 使用深度信息调整跟踪参数
                     if self.target_depth is not None:
