@@ -89,29 +89,27 @@ class image_listenner:
         self.smooth_factor = 0.3  # 平滑因子
         
         try:
-            # Use GTK backend for better compatibility
-            cv2.useOptimized()
-            cv2.startWindowThread()
-            cv2.namedWindow('imshow', cv2.WINDOW_NORMAL | cv2.WINDOW_KEEPRATIO)
-            cv2.resizeWindow('imshow', 640, 480)
+            # 修改窗口创建方式
+            cv2.namedWindow('imshow', cv2.WINDOW_AUTOSIZE)
+            cv2.moveWindow('imshow', 100, 100)
             cv2.setMouseCallback('imshow', onMouse)
             rospy.loginfo("Initializing image viewer...")
             
-            # 初始化bridge和订阅器
+            # 修改订阅话题
             self.bridge = CvBridge()
-            # 修改订阅话题名称以匹配实际配置
             self.image_sub = rospy.Subscriber("/track_car/camera/image_raw", 
                                             Image, 
                                             self.image_sub_callback,
-                                            queue_size=1)
+                                            queue_size=1,
+                                            buff_size=2**24)  # 增加缓冲区大小
             self.depth_sub = rospy.Subscriber("/camera/depth/image_raw", 
                                             Image, 
                                             self.depth_callback,
                                             queue_size=1)
-            self.twist_pub = rospy.Publisher("/cmd_vel", Twist, queue_size=1)
+            self.twist_pub = rospy.Publisher("cmd_vel", Twist, queue_size=1)
             
-            self.current_depth = 0
-            self.window_created = False
+            # 等待第一帧图像
+            rospy.wait_for_message("/track_car/camera/image_raw", Image, timeout=5.0)
             
         except Exception as e:
             rospy.logerr("Init failed: %s", str(e))
@@ -120,8 +118,11 @@ class image_listenner:
         self.start_auto_detect()
 
     def __del__(self):
-        cv2.destroyAllWindows()
-        cv2.waitKey(1)  # Force window destruction
+        try:
+            cv2.destroyAllWindows()
+            cv2.waitKey(1)
+        except:
+            pass
 
     def start_auto_detect(self):
         """自动开始目标检测"""
@@ -179,31 +180,27 @@ class image_listenner:
         global image
 
         try:
-            self.img = self.bridge.imgmsg_to_cv2(msg, "bgr8")
-            image = self.img.copy()  # 创建图像副本防止数据竞争
+            # 转换和显示图像
+            cv_image = self.bridge.imgmsg_to_cv2(msg, "bgr8")
+            image = cv_image.copy()
             
-            # 显示提示框
             if not trackObject:
-                cv2.putText(image, "请点击并拖动鼠标选择跟踪目标", 
+                cv2.putText(image, "Click and drag to select target", 
                           (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 
                           0.7, (0, 255, 0), 2)
                 
             track_centerX, length_of_diagonal = ExamByCamshift()
             
             if track_centerX >= 0:
-                # 使用预测位置进行控制
                 predicted_x = self.predict_target_position(track_centerX)
                 control_msg = self.calculate_control(predicted_x, self.current_depth)
                 self.twist_pub.publish(control_msg)
             
             cv2.imshow('imshow', image)
-            key = cv2.waitKey(1) & 0xFF
-            if key == 27:  # ESC key
-                rospy.signal_shutdown("User requested shutdown")
-                
+            cv2.waitKey(3)
+            
         except Exception as e:
-            rospy.logerr("图像处理失败: %s", str(e))
-
+            rospy.logerr("Image processing failed: %s", str(e))
 
     def turn_left(self):
         rospy.loginfo("cam_turn_left")
@@ -239,8 +236,10 @@ if __name__ == '__main__':
         image_listenning = image_listenner()
         rospy.on_shutdown(cv2.destroyAllWindows)
         rospy.spin()
+    except KeyboardInterrupt:
+        cv2.destroyAllWindows()
     except Exception as e:
-        rospy.logerr("节点运行出错: %s", str(e))
+        rospy.logerr("Node error: %s", str(e))
     finally:
         cv2.destroyAllWindows()
         cv2.waitKey(1)

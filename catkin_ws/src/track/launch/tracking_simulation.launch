@@ -61,6 +61,7 @@
         <!-- 视觉跟踪节点 -->
         <node name="vision_node" pkg="track" type="vision_node.py" output="screen">
             <remap from="/camera/image_raw" to="camera/image_raw"/>
+            <remap from="cmd_vel" to="cmd_vel"/>
         </node>
     </group>
 
