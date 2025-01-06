@@ -1,66 +1,55 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <launch>
-    <!-- Configure Gazebo -->
-    <env name="GAZEBO_MODEL_PATH" value="$(find track)/models:$(optenv GAZEBO_MODEL_PATH)"/>
-    <env name="SVGA_VGPU10" value="0"/>
-    <env name="LIBGL_ALWAYS_SOFTWARE" value="1"/>
-    <env name="OGRE_RTT_MODE" value="Copy"/>
-    <env name="GAZEBO_GPU_RAY" value="0"/>
+    <!-- 启动仿真环境 -->
+    <include file="$(find gazebo_ros)/launch/empty_world.launch">
+        <arg name="world_name" value="$(find track)/worlds/track_world.world"/>
+        <arg name="paused" value="false"/>
+        <arg name="gui" value="true"/>
+    </include>
 
-    <!-- Simulation Server -->
-    <node name="gazebo" pkg="gazebo_ros" type="gzserver" 
-          args="--verbose $(find track)/worlds/track.world" output="screen"
-          required="true"/>
-
-    <!-- Load robot descriptions -->
+    <!-- 加载机器人描述参数 -->
     <group ns="target_car">
         <param name="robot_description" 
-               command="$(find xacro)/xacro '$(find track)/urdf/car.urdf.xacro'" />
+               command="$(find xacro)/xacro $(find track)/urdf/car.urdf.xacro robot_type:=target_car" />
+        
+        <!-- 生成目标车辆 -->
+        <node name="spawn_target" pkg="gazebo_ros" type="spawn_model" respawn="false" output="screen"
+              args="-urdf 
+                    -param robot_description
+                    -model target_car
+                    -x 0.0 -y 0.0 -z 0.05"/>
+        
+        <!-- 键盘控制节点 -->
+        <node name="keyboard_control" pkg="track" type="keyboard_control" output="screen">
+            <remap from="cmd_vel" to="cmd_vel"/>
+        </node>
+
+        <!-- 状态发布 -->
+        <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher"/>
     </group>
+
+    <!-- 跟踪车配置 -->
     <group ns="track_car">
         <param name="robot_description" 
-               command="$(find xacro)/xacro '$(find track)/urdf/car.urdf.xacro'" />
+               command="$(find xacro)/xacro $(find track)/urdf/car.urdf.xacro robot_type:=track_car" />
+        
+        <!-- 生成跟踪车辆 -->
+        <node name="spawn_tracker" pkg="gazebo_ros" type="spawn_model" respawn="false" output="screen"
+              args="-urdf 
+                    -param robot_description
+                    -model track_car
+                    -x -2.0 -y 0.0 -z 0.05"/>
+
+        <!-- 状态发布 -->
+        <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher"/>
+
+        <!-- 视觉跟踪节点 -->
+        <node name="vision_node" pkg="track" type="vision_node.py" output="screen">
+            <remap from="/camera/image_raw" to="camera/image_raw"/>
+        </node>
     </group>
 
-    <!-- Core nodes -->
-    <node name="keyboard_control" pkg="track" type="keyboard_control" output="screen" ns="target_car">
-        <remap from="cmd_vel" to="cmd_vel"/>
-    </node>
-
-    <node name="tracking_controller" pkg="track" type="tracking_node" output="screen" ns="track_car">
-        <param name="max_linear_speed" value="0.5"/>
-        <param name="max_angular_speed" value="1.0"/>
-        <param name="min_distance" value="0.5"/>
-        <param name="desired_distance" value="1.0"/>
-        <remap from="cmd_vel" to="cmd_vel"/>
-        <remap from="target/odom" to="/target_car/odom"/>
-        <remap from="odom" to="odom"/>
-    </node>
-
-    <!-- State publishers -->
-    <node name="target_state_publisher" pkg="robot_state_publisher" 
-          type="robot_state_publisher" ns="target_car"/>
-    <node name="track_state_publisher" pkg="robot_state_publisher" 
-          type="robot_state_publisher" ns="track_car"/>
-
-    <!-- Spawn models first -->
-    <node name="spawn_target" pkg="gazebo_ros" type="spawn_model"
-          args="-urdf -param /target_car/robot_description -model target_car 
-                -x 0.0 -y 0.0 -z 0.05" output="screen" 
-          ns="target_car" />
-
-    <node name="spawn_tracker" pkg="gazebo_ros" type="spawn_model"
-          args="-urdf -param /track_car/robot_description -model track_car
-                -x -2.0 -y 0.0 -z 0.05" output="screen"
-          ns="track_car" />
-
-    <!-- Start Gazebo GUI with more delay and environment settings -->
-    <node name="gazebo_gui" pkg="gazebo_ros" type="gzclient" output="screen"
-          launch-prefix="bash -c 'sleep 10; DISPLAY=:0 $0 $@'"
-          respawn="false"/>
-
-    <!-- Visualization -->
+    <!-- 启动rviz可视化 -->
     <node name="rviz" pkg="rviz" type="rviz" 
-          args="-d $(find track)/rviz/tracking.rviz"
-          launch-prefix="bash -c 'sleep 2; $0 $@'"/>
+          args="-d $(find track)/rviz/tracking_simulation.rviz"/>
 </launch>
