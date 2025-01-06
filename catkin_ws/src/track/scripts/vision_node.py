@@ -47,35 +47,51 @@ def onMouse(event, x, y, flags, prams):
 ##################
 def ExamByCamshift():
     global xs, ys, ws, hs, selectObject, xo, yo, trackObject, image, roi_hist, track_window
+    # 创建显示用的图像副本
+    display_img = image.copy()
+    
     term_crit = (cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT, 10, 1)
     hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
     centerX = -1.0
     length_of_diagonal = float()
+    
+    # 显示实时选择框
+    if selectObject and ws > 0 and hs > 0:
+        cv2.rectangle(display_img, (xs, ys), (xs+ws, ys+hs), (0, 255, 0), 2)
+        cv2.putText(display_img, f"Selection: {ws}x{hs}", (xs, ys-10), 
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
+    
+    # 目标跟踪处理
     if trackObject != 0:
         mask = cv2.inRange(hsv, np.array((0., 30., 10.)), np.array((180., 256., 255.)))
-        if trackObject == -1:
+        if trackObject == -1:  # 初次选择目标
             track_window = (xs, ys, ws, hs)
             maskroi = mask[ys:ys + hs, xs:xs + ws]
             hsv_roi = hsv[ys:ys + hs, xs:xs + ws]
             roi_hist = cv2.calcHist([hsv_roi], [0], maskroi, [180], [0, 180])
             cv2.normalize(roi_hist, roi_hist, 0, 255, cv2.NORM_MINMAX)
             trackObject = 1
+            # 显示选中区域
+            cv2.rectangle(display_img, (xs, ys), (xs+ws, ys+hs), (255, 0, 0), 2)
+            cv2.putText(display_img, "Target Selected", (xs, ys-10), 
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 0, 0), 2)
+        
+        # 执行跟踪
         dst = cv2.calcBackProject([hsv], [0], roi_hist, [0, 180], 1)
         dst &= mask
         ret, track_window = cv2.CamShift(dst, track_window, term_crit)
-        centerX = ret[0][0]
-        #data : ret (center(x,y),(width,height),angular)
         pts = cv2.boxPoints(ret)
         pts = np.int0(pts)
+        centerX = ret[0][0]
         length_of_diagonal = math.sqrt(ret[1][1] ** 2 + ret[1][0] ** 2)
-        img2 = cv2.polylines(image, [pts], True, 255, 2)
-    if selectObject == True and ws > 0 and hs > 0:
-        # 显示选择区域的反转效果
-        temp = image.copy()
-        cv2.rectangle(temp, (xs, ys), (xs+ws, ys+hs), (0, 255, 0), 2)
-        image = temp
-    cv2.imshow('imshow', image)
-
+        
+        # 显示跟踪框和中心点
+        cv2.polylines(display_img, [pts], True, (0, 0, 255), 2)
+        cv2.circle(display_img, (int(centerX), int(ret[0][1])), 5, (0, 255, 255), -1)
+        cv2.putText(display_img, f"Tracking: ({int(centerX)}, {int(ret[0][1])})", 
+                    (10, 450), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 255), 2)
+    
+    cv2.imshow('imshow', display_img)
     return centerX, length_of_diagonal
 
 class image_listenner:
@@ -96,7 +112,8 @@ class image_listenner:
             rospy.loginfo("等待相机初始化...")
             
             # 修改窗口创建方式
-            cv2.namedWindow('imshow', cv2.WINDOW_AUTOSIZE)
+            cv2.namedWindow('imshow', cv2.WINDOW_NORMAL)
+            cv2.resizeWindow('imshow', 800, 600)  # 放大显示窗口
             cv2.moveWindow('imshow', 100, 100)
             cv2.setMouseCallback('imshow', onMouse)
             
@@ -208,17 +225,13 @@ class image_listenner:
             # 转换和显示图像
             cv_image = self.bridge.imgmsg_to_cv2(msg, "bgr8")
             image = cv_image.copy()
-            display_image = image.copy()  # 创建显示用的副本
             
-            if not trackObject:
-                cv2.putText(display_image, "请点击并拖动鼠标选择跟踪目标", 
-                          (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 
-                          0.7, (0, 255, 0), 2)
-                
-                # 显示当前选择框
-                if selectObject and ws > 0 and hs > 0:
-                    cv2.rectangle(display_image, (xs, ys), (xs+ws, ys+hs), (0, 255, 0), 2)
-                
+            # 添加状态显示
+            status_text = "选择目标" if not trackObject else "跟踪中"
+            cv2.putText(image, f"状态: {status_text}", (10, 30), 
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
+            
+            # 处理跟踪
             track_centerX, length_of_diagonal = ExamByCamshift()
             
             if track_centerX >= 0:
@@ -226,11 +239,8 @@ class image_listenner:
                 control_msg = self.calculate_control(predicted_x, self.current_depth)
                 self.twist_pub.publish(control_msg)
             
-            # 显示图像
-            cv2.imshow('imshow', display_image)
-            key = cv2.waitKey(3) & 0xFF
-            if key == 27:  # ESC键退出
-                rospy.signal_shutdown("User requested shutdown")
+            # 确保窗口刷新
+            cv2.waitKey(1)
             
         except Exception as e:
             rospy.logerr("图像处理失败: %s", str(e))
