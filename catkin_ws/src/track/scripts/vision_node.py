@@ -89,12 +89,13 @@ class image_listenner:
         self.smooth_factor = 0.3  # 平滑因子
         
         try:
-            # 确保在主线程中创建窗口
+            # Use GTK backend for better compatibility
+            cv2.useOptimized()
             cv2.startWindowThread()
-            cv2.namedWindow('imshow', cv2.WINDOW_NORMAL)
+            cv2.namedWindow('imshow', cv2.WINDOW_NORMAL | cv2.WINDOW_KEEPRATIO)
             cv2.resizeWindow('imshow', 640, 480)
             cv2.setMouseCallback('imshow', onMouse)
-            rospy.loginfo("等待图像加载...")
+            rospy.loginfo("Initializing image viewer...")
             
             # 初始化bridge和订阅器
             self.bridge = CvBridge()
@@ -113,16 +114,14 @@ class image_listenner:
             self.window_created = False
             
         except Exception as e:
-            rospy.logerr("初始化失败: %s", str(e))
+            rospy.logerr("Init failed: %s", str(e))
             raise
 
         self.start_auto_detect()
 
     def __del__(self):
-        try:
-            cv2.destroyAllWindows()
-        except:
-            pass
+        cv2.destroyAllWindows()
+        cv2.waitKey(1)  # Force window destruction
 
     def start_auto_detect(self):
         """自动开始目标检测"""
@@ -198,7 +197,10 @@ class image_listenner:
                 self.twist_pub.publish(control_msg)
             
             cv2.imshow('imshow', image)
-            cv2.waitKey(1)  # 改为1ms等待
+            key = cv2.waitKey(1) & 0xFF
+            if key == 27:  # ESC key
+                rospy.signal_shutdown("User requested shutdown")
+                
         except Exception as e:
             rospy.logerr("图像处理失败: %s", str(e))
 
@@ -235,8 +237,10 @@ if __name__ == '__main__':
     try:
         rospy.init_node('image_listenner', anonymous=False)
         image_listenning = image_listenner()
+        rospy.on_shutdown(cv2.destroyAllWindows)
         rospy.spin()
     except Exception as e:
         rospy.logerr("节点运行出错: %s", str(e))
     finally:
         cv2.destroyAllWindows()
+        cv2.waitKey(1)

@@ -1,9 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <robot name="car" xmlns:xacro="http://www.ros.org/wiki/xacro">
-    <!-- 包含其他xacro文件 -->
     <xacro:include filename="$(find track)/urdf/common.xacro" />
     
-    <!-- Robot type parameter -->
     <xacro:arg name="robot_type" default="track_car"/>
     
     <!-- Materials -->
@@ -59,7 +57,7 @@
         </collision>
     </link>
 
-    <!-- 四个车轮宏定义 -->
+    <!-- Wheel macro -->
     <xacro:macro name="wheel" params="prefix x_reflect y_reflect">
         <joint name="${prefix}_wheel_joint" type="continuous">
             <parent link="base_link"/>
@@ -86,7 +84,7 @@
         </link>
     </xacro:macro>
 
-    <!-- 添加四个车轮 -->
+    <!-- Add four wheels -->
     <xacro:wheel prefix="front_right" x_reflect="1" y_reflect="-1" />
     <xacro:wheel prefix="front_left" x_reflect="1" y_reflect="1" />
     <xacro:wheel prefix="rear_right" x_reflect="-1" y_reflect="-1" />
@@ -135,7 +133,7 @@
         </sensor>
     </gazebo>
 
-    <!-- 修改差速驱动插件配置 -->
+    <!-- Modify differential drive plugin configuration -->
     <gazebo>
         <plugin name="differential_drive_controller" filename="libgazebo_ros_diff_drive.so">
             <leftJoint>front_left_wheel_joint</leftJoint>
