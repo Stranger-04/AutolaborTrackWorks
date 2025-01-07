@@ -273,16 +273,29 @@ class image_listenner:
                 rospy.loginfo("控制 - 中心: %.1f, 误差: %.1f, 阈值: %d", 
                             track_centerX, error, self.threshold)
                 
+                # 首先处理方向控制
                 if abs(error) > self.threshold:
                     if error < 0:
                         self.turn_right()
                     else:
                         self.turn_left()
                 else:
-                    if length_of_diagonal < self.track_windows_threshold:
-                        self.go_ahead()
+                    # 方向正确时，根据深度信息控制前进后退
+                    if hasattr(self, 'current_depth') and self.depth_initialized:
+                        depth_error = self.current_depth - self.target_distance
+                        if abs(depth_error) > self.depth_threshold:
+                            if depth_error > 0:  # 当前距离大于目标距离，需要前进靠近
+                                self.go_ahead()
+                            else:  # 当前距离小于目标距离，需要后退
+                                self.go_back()
+                        else:
+                            self.stop_move()  # 在目标范围内停止
                     else:
-                        self.stop_move()
+                        # 没有深度信息时使用视觉大小估计
+                        if length_of_diagonal < self.track_windows_threshold:
+                            self.go_ahead()
+                        else:
+                            self.stop_move()
             
         except Exception as e:
             rospy.logerr("图像处理失败: %s", str(e))
@@ -304,14 +317,16 @@ class image_listenner:
             msg = Twist()
             self.twist_pub.publish(msg)
     def go_ahead(self):
+        """前进"""
         rospy.loginfo("moving ahead")
         msg = Twist()
-        msg.linear.x = -self.linear_x
+        msg.linear.x = self.linear_x  # 注意：这里移除了负号
         self.twist_pub.publish(msg)
     def go_back(self):
+        """后退"""
         rospy.loginfo("moving back")
         msg = Twist()
-        msg.linear.x = self.linear_x
+        msg.linear.x = -self.linear_x  # 加上负号表示后退
         self.twist_pub.publish(msg)
 
 def callback(twist):
