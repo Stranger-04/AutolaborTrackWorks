@@ -66,15 +66,15 @@ def ExamByCamshift():
         # 处理框选
         if selectObject and ws > 0 and hs > 0:
             # 显示选择框
-            cv2.rectangle(image, (xs, ys), (xs+ws, ys+hs), (0, 255, 0), 2)
+            cv2.rectangle(image, (xs, ys), (xs+ws), (ys+hs), (0, 255, 0), 2)
             # 反色显示选择区域
             cv2.bitwise_not(image[ys:ys + hs, xs:xs + ws], image[ys:ys + hs, xs:xs + ws])
             rospy.loginfo("选择区域: x=%d, y=%d, w=%d, h=%d", xs, ys, ws, hs)
 
         # 跟踪处理
         if trackObject != 0:
-            # 创建掩码
-            mask = cv2.inRange(hsv, np.array((0., 60., 32.)), np.array((180., 255., 255.)))
+            # 创建更宽松的掩码范围以适应Gazebo中的颜色
+            mask = cv2.inRange(hsv, np.array((20., 100., 100.)), np.array((80., 255., 255.)))
             
             if trackObject == -1:  # 初始化追踪
                 # 确保选择区域有效
@@ -83,8 +83,9 @@ def ExamByCamshift():
                     roi_mask = mask[ys:ys + hs, xs:xs + ws]
                     roi_hsv = hsv[ys:ys + hs, xs:xs + ws]
                     
-                    # 计算ROI区域的HSV直方图
-                    roi_hist = cv2.calcHist([roi_hsv], [0], roi_mask, [180], [0, 180])
+                    # 计算ROI区域的HSV直方图，使用3个通道
+                    roi_hist = cv2.calcHist([roi_hsv], [0, 1, 2], roi_mask, [16, 16, 16], 
+                                            [0, 180, 0, 256, 0, 256])
                     cv2.normalize(roi_hist, roi_hist, 0, 255, cv2.NORM_MINMAX)
                     
                     # 输出ROI区域的HSV范围
@@ -94,6 +95,11 @@ def ExamByCamshift():
                                 np.min(roi_hsv[:,:,2]), np.max(roi_hsv[:,:,2]))
                     
                     trackObject = 1
+                    
+                    # 显示选择区域的HSV信息以帮助调试
+                    mean_hsv = cv2.mean(roi_hsv, roi_mask)
+                    rospy.loginfo("目标区域HSV平均值: H=%.1f, S=%.1f, V=%.1f", 
+                                 mean_hsv[0], mean_hsv[1], mean_hsv[2])
             
             if trackObject == 1:  # 执行追踪
                 # 计算反向投影
@@ -143,22 +149,108 @@ class image_listenner:
         cv2.setMouseCallback('imshow', onMouse)
         self.bridge = CvBridge()
         
+        # 更新相机话题名称
+        rgb_topic = "/track_car/camera/image_raw"
+        depth_topic = "/track_car/camera/depth/image_raw"
+        
+        rospy.loginfo("订阅RGB相机话题: %s", rgb_topic)
+        rospy.loginfo("订阅深度相机话题: %s", depth_topic)
+        
         # 订阅相机话题
-        self.image_sub = rospy.Subscriber("/track_car/camera/image_raw", 
-                                        Image, 
-                                        self.image_sub_callback,
-                                        queue_size=1)
+        self.image_sub = rospy.Subscriber(rgb_topic, Image, self.image_sub_callback, queue_size=1)
+        self.depth_sub = rospy.Subscriber(depth_topic, Image, self.depth_callback, queue_size=1)
+        
+        # 等待相机话题
+        try:
+            rospy.wait_for_message(rgb_topic, Image, timeout=5.0)
+            rospy.wait_for_message(depth_topic, Image, timeout=5.0)
+            rospy.loginfo("成功接收到相机数据")
+        except rospy.ROSException:
+            rospy.logerr("无法接收相机数据，请检查相机话题")
+            raise
+
         self.twist_pub = rospy.Publisher("cmd_vel", Twist, queue_size=1)
+
+        self.depth_image = None
+        self.target_depth = None
+        self.depth_initialized = False
+        self.depth_threshold = 0.1  # 深度检测阈值
+        self.target_distance = 1.0  # 期望距离
+
+    def depth_callback(self, msg):
+        """处理深度图像"""
+        try:
+            self.depth_image = self.bridge.imgmsg_to_cv2(msg, "32FC1")
+            if trackObject == 1 and 'track_window' in globals():
+                # 获取跟踪窗口区域的深度
+                x, y = int(track_window[0] + track_window[2]/2), int(track_window[1] + track_window[3]/2)
+                window_depth = self.depth_image[y-5:y+5, x-5:x+5]  # 使用5x5区域的平均深度
+                valid_depths = window_depth[~np.isnan(window_depth)]
+                
+                if valid_depths.size > 0:
+                    self.current_depth = np.median(valid_depths)  # 使用中值滤波
+                    if not self.depth_initialized and not np.isnan(self.current_depth):
+                        self.target_depth = self.current_depth
+                        self.depth_initialized = True
+                    rospy.loginfo("深度信息 - 当前: %.2f m, 目标: %.2f m", 
+                                self.current_depth, self.target_depth)
+
+        except Exception as e:
+            rospy.logerr("深度处理失败: %s", str(e))
+
+    def calculate_control(self, target_x, length):
+        """结合视觉和深度信息计算控制命令"""
+        msg = Twist()
+        center_x = 320
+        error_x = target_x - center_x
+        
+        # 方向控制
+        if abs(error_x) > self.threshold:
+            turn_factor = min(abs(error_x) / center_x, 1.0)
+            msg.angular.z = self.angular_z * turn_factor * (error_x / abs(error_x))
+        
+        # 深度控制
+        if hasattr(self, 'current_depth') and self.depth_initialized:
+            depth_error = self.current_depth - self.target_distance
+            rospy.loginfo("深度误差: %.2f m", depth_error)
+            
+            if abs(depth_error) > self.depth_threshold:
+                # 根据深度误差计算速度
+                speed = self.linear_x * np.clip(depth_error, -1, 1)
+                msg.linear.x = speed
+                
+                # 距离太近时后退
+                if depth_error < -self.depth_threshold:
+                    msg.linear.x = -abs(msg.linear.x)
+                # 距离太远时前进
+                elif depth_error > self.depth_threshold:
+                    msg.linear.x = abs(msg.linear.x)
+            else:
+                msg.linear.x = 0  # 距离合适时停止
+                
+            # 转向时降低速度
+            msg.linear.x *= (1.0 - 0.5 * abs(msg.angular.z))
+        else:
+            # 如果没有深度信息，使用视觉大小估计
+            if length < self.track_windows_threshold:
+                msg.linear.x = self.linear_x
+            else:
+                msg.linear.x = 0
+        
+        rospy.loginfo("控制输出 - 线速度: %.2f, 角速度: %.2f", msg.linear.x, msg.angular.z)
+        return msg
 
     def image_sub_callback(self, msg):
         global image
         try:
             image = self.bridge.imgmsg_to_cv2(msg, "bgr8")
-            # 确保图像正确接收
-            if image is None or image.size == 0:
-                rospy.logerr("接收到无效图像")
-                return
-                
+            
+            # 显示深度信息
+            if self.depth_image is not None:
+                depth_display = cv2.normalize(self.depth_image, None, 0, 255, cv2.NORM_MINMAX, dtype=cv2.CV_8U)
+                depth_colormap = cv2.applyColorMap(depth_display, cv2.COLORMAP_JET)
+                cv2.imshow('depth', depth_colormap)
+            
             track_centerX, length_of_diagonal = ExamByCamshift()
             windows_centerX = image.shape[1] // 2  # 使用图像实际中心点
             
