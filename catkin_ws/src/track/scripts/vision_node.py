@@ -55,76 +55,83 @@ def onMouse(event, x, y, flags, prams):
 def ExamByCamshift():
     global xs, ys, ws, hs, selectObject, xo, yo, trackObject, image, roi_hist, track_window
     term_crit = (cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT, 10, 1)
-    hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
     centerX = -1.0
     length_of_diagonal = float()
 
     try:
-        # 显示当前图像尺寸和模式
-        rospy.loginfo("图像尺寸: %dx%d", image.shape[1], image.shape[0])
+        # 转换为HSV空间
+        hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
         
-        # 处理框选
+        # 处理框选过程
         if selectObject and ws > 0 and hs > 0:
-            # 显示选择框
-            cv2.rectangle(image, (xs, ys), (xs+ws), (ys+hs), (0, 255, 0), 2)
+            # 修正：确保所有坐标都是整数
+            x1, y1 = int(xs), int(ys)
+            x2, y2 = int(xs + ws), int(ys + hs)
+            
+            # 绘制选择框
+            cv2.rectangle(image, (x1, y1), (x2, y2), (0, 255, 0), 2)
             # 反色显示选择区域
-            cv2.bitwise_not(image[ys:ys + hs, xs:xs + ws], image[ys:ys + hs, xs:xs + ws])
-            rospy.loginfo("选择区域: x=%d, y=%d, w=%d, h=%d", xs, ys, ws, hs)
+            try:
+                selection = image[y1:y2, x1:x2]
+                if selection.size > 0:  # 确保选择区域有效
+                    cv2.bitwise_not(selection, selection)
+            except ValueError as e:
+                rospy.logwarn("Invalid selection area: %s", str(e))
+            
+            rospy.loginfo("选择区域: x1=%d, y1=%d, w=%d, h=%d", x1, y1, ws, hs)
 
         # 跟踪处理
         if trackObject != 0:
-            # 创建更宽松的掩码范围以适应Gazebo中的颜色
-            mask = cv2.inRange(hsv, np.array((20., 100., 100.)), np.array((80., 255., 255.)))
+            # 设置HSV掩码范围
+            mask = cv2.inRange(hsv, np.array((0., 30., 10.)), np.array((180., 256., 255.)))
             
-            if trackObject == -1:  # 初始化追踪
-                # 确保选择区域有效
+            if trackObject == -1:  # 初始化跟踪
                 if ws > 0 and hs > 0:
-                    track_window = (xs, ys, ws, hs)
-                    roi_mask = mask[ys:ys + hs, xs:xs + ws]
-                    roi_hsv = hsv[ys:ys + hs, xs:xs + ws]
+                    # 保存跟踪窗口
+                    track_window = (int(xs), int(ys), int(ws), int(hs))
                     
-                    # 计算ROI区域的HSV直方图，使用3个通道
-                    roi_hist = cv2.calcHist([roi_hsv], [0, 1, 2], roi_mask, [16, 16, 16], 
-                                            [0, 180, 0, 256, 0, 256])
-                    cv2.normalize(roi_hist, roi_hist, 0, 255, cv2.NORM_MINMAX)
+                    # 确保索引有效
+                    y1, y2 = int(ys), int(ys + hs)
+                    x1, x2 = int(xs), int(xs + ws)
                     
-                    # 输出ROI区域的HSV范围
-                    rospy.loginfo("ROI HSV范围 - H: %d-%d, S: %d-%d, V: %d-%d",
-                                np.min(roi_hsv[:,:,0]), np.max(roi_hsv[:,:,0]),
-                                np.min(roi_hsv[:,:,1]), np.max(roi_hsv[:,:,1]),
-                                np.min(roi_hsv[:,:,2]), np.max(roi_hsv[:,:,2]))
+                    # 确保索引在图像范围内
+                    y1 = max(0, min(y1, image.shape[0] - 1))
+                    y2 = max(0, min(y2, image.shape[0]))
+                    x1 = max(0, min(x1, image.shape[1] - 1))
+                    x2 = max(0, min(x2, image.shape[1]))
                     
-                    trackObject = 1
+                    maskroi = mask[y1:y2, x1:x2]
+                    hsv_roi = hsv[y1:y2, x1:x2]
                     
-                    # 显示选择区域的HSV信息以帮助调试
-                    mean_hsv = cv2.mean(roi_hsv, roi_mask)
-                    rospy.loginfo("目标区域HSV平均值: H=%.1f, S=%.1f, V=%.1f", 
-                                 mean_hsv[0], mean_hsv[1], mean_hsv[2])
+                    # 检查ROI区域是否有效
+                    if maskroi.size > 0 and hsv_roi.size > 0:
+                        roi_hist = cv2.calcHist([hsv_roi], [0], maskroi, [180], [0, 180])
+                        cv2.normalize(roi_hist, roi_hist, 0, 255, cv2.NORM_MINMAX)
+                        trackObject = 1
+                        rospy.loginfo("跟踪初始化成功")
+                    else:
+                        rospy.logerr("无效的ROI区域")
+                        trackObject = 0
             
-            if trackObject == 1:  # 执行追踪
-                # 计算反向投影
+            if trackObject == 1:
+                # 执行反向投影和跟踪
                 dst = cv2.calcBackProject([hsv], [0], roi_hist, [0, 180], 1)
                 dst &= mask
                 
-                # 应用CamShift
                 ret, track_window = cv2.CamShift(dst, track_window, term_crit)
                 
-                # 检查跟踪结果是否有效
-                if track_window[2] > 0 and track_window[3] > 0:
-                    centerX = float(ret[0][0])
-                    pts = cv2.boxPoints(ret)
-                    pts = np.int0(pts)
-                    length_of_diagonal = math.sqrt(float(ret[1][1]) ** 2 + float(ret[1][0]) ** 2)
-                    
-                    # 绘制跟踪结果
-                    cv2.polylines(image, [pts], True, (0, 0, 255), 2)
-                    cv2.circle(image, (int(centerX), int(ret[0][1])), 5, (0, 255, 255), -1)
-                    
-                    # 显示跟踪信息
-                    rospy.loginfo("跟踪位置: (%.1f, %.1f), 大小: %.1f", centerX, ret[0][1], length_of_diagonal)
-                else:
-                    rospy.logwarn("跟踪窗口无效")
-                    centerX = -1.0
+                centerX = float(ret[0][0])
+                pts = cv2.boxPoints(ret)
+                pts = np.int0(pts)
+                length_of_diagonal = math.sqrt(float(ret[1][1]) ** 2 + float(ret[1][0]) ** 2)
+                
+                # 绘制跟踪结果
+                cv2.polylines(image, [pts], True, (0, 0, 255), 2)
+                cv2.circle(image, (int(centerX), int(ret[0][1])), 5, (0, 255, 255), -1)
+                
+                # 显示跟踪信息
+                cv2.putText(image, "Tracking: ({:.0f}, {:.0f})".format(centerX, ret[0][1]),
+                           (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
 
         cv2.imshow('imshow', image)
         cv2.waitKey(3)
