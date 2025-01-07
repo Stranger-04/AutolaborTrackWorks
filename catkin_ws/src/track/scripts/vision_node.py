@@ -146,7 +146,7 @@ class image_listenner:
     def __init__(self):
         # 调整参数
         self.threshold = 80  # 增加阈值
-        self.linear_x = 0.3
+        self.linear_x = 0.2  # 降低基础速度以提高稳定性
         self.angular_z = 0.2
         self.track_windows_threshold = math.sqrt(95*95+235*235)+10000
         
@@ -181,8 +181,9 @@ class image_listenner:
         self.depth_image = None
         self.target_depth = None
         self.depth_initialized = False
-        self.depth_threshold = 0.1  # 深度检测阈值
-        self.target_distance = 1.0  # 期望距离
+        self.depth_threshold = 0.05  # 深度检测阈值
+        self.target_distance = 1.65  # 期望距离
+        self.max_speed = 0.3  # 最大速度限制
 
     def depth_callback(self, msg):
         """处理深度图像"""
@@ -222,19 +223,25 @@ class image_listenner:
             rospy.loginfo("深度误差: %.2f m", depth_error)
             
             if abs(depth_error) > self.depth_threshold:
-                # 根据深度误差计算速度
-                speed = self.linear_x * np.clip(depth_error, -1, 1)
-                msg.linear.x = speed
+                # 使用比例控制计算速度
+                speed_factor = np.clip(abs(depth_error) / 0.5, 0, 1.0)  # 0.5m作为标准差
+                speed = self.linear_x * speed_factor
                 
-                # 距离太近时后退
-                if depth_error < -self.depth_threshold:
-                    msg.linear.x = -abs(msg.linear.x)
-                # 距离太远时前进
-                elif depth_error > self.depth_threshold:
-                    msg.linear.x = abs(msg.linear.x)
+                # 确保速度不超过最大限制
+                speed = np.clip(speed, -self.max_speed, self.max_speed)
+                
+                # 根据距离差决定前进还是后退
+                if depth_error > 0:  # 当前距离大于目标距离，需要前进
+                    msg.linear.x = speed
+                else:  # 当前距离小于目标距离，需要后退
+                    msg.linear.x = -speed
+                
+                rospy.loginfo("深度控制 - 当前距离: %.2f m, 目标距离: %.2f m, 速度: %.2f", 
+                            self.current_depth, self.target_distance, msg.linear.x)
             else:
-                msg.linear.x = 0  # 距离合适时停止
-                
+                msg.linear.x = 0  # 在目标范围内停止
+                rospy.loginfo("到达目标距离范围")
+            
             # 转向时降低速度
             msg.linear.x *= (1.0 - 0.5 * abs(msg.angular.z))
         else:
