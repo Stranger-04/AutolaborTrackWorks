@@ -67,6 +67,10 @@ class ColorTracker:
             # 获取颜色掩码
             mask = self.get_color_mask(hsv)
             
+            # 添加调试信息显示
+            debug_info = f"目标颜色: {self.target_color}"
+            cv2.putText(cv_image, debug_info, (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
+            
             # 修改findContours调用以兼容OpenCV 3.x
             _, contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
             
@@ -92,6 +96,13 @@ class ColorTracker:
                         # 计算偏离中心的误差
                         error_x = cx - self.image_center_x
                         
+                        # 添加控制参数显示
+                        control_info = f"Error_X: {error_x:.2f}"
+                        cv2.putText(cv_image, control_info, (10, 60), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
+                        
+                        cmd_info = f"Angular: {-self.angular_speed * (error_x / float(self.image_center_x)):.2f}"
+                        cv2.putText(cv_image, cmd_info, (10, 90), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
+                        
                         # 根据误差控制机器人运动
                         if abs(error_x) > self.center_threshold:
                             # 转向控制
@@ -99,7 +110,9 @@ class ColorTracker:
                         else:
                             # 前进控制
                             cmd.linear.x = self.linear_speed
-                            
+                            cmd_info = f"Linear: {self.linear_speed:.2f}"
+                            cv2.putText(cv_image, cmd_info, (10, 120), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
+                        
                         rospy.loginfo("目标位置: (%d, %d), 面积: %.2f", cx, cy, area)
             
             # 发布控制命令
