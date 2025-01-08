@@ -1,0 +1,30 @@
+<launch>
+    <!-- 启动USB摄像头节点 -->
+    <node name="usb_cam" pkg="usb_cam" type="usb_cam_node" output="screen">
+        <param name="video_device" value="/dev/video0" />
+        <param name="image_width" value="640" />
+        <param name="image_height" value="480" />
+        <param name="pixel_format" value="yuyv" />
+        <param name="camera_frame_id" value="usb_cam" />
+        <param name="io_method" value="mmap"/>
+        <param name="framerate" value="30" />
+        <param name="brightness" value="50" />
+        <param name="auto_white_balance" value="true" />
+    </node>
+
+    <!-- 启动颜色跟踪节点 -->
+    <node name="color_tracker" pkg="track" type="camera_node.py" output="screen">
+        <param name="target_color" value="red" />
+        <param name="linear_speed" value="0.2" />
+        <param name="angular_speed" value="0.2" />
+        <param name="min_area" value="500" />
+        <!-- 重映射摄像头话题 -->
+        <remap from="/camera/image_raw" to="/usb_cam/image_raw"/>
+    </node>
+
+    <!-- 可选：图像查看节点 -->
+    <node name="image_view" pkg="image_view" type="image_view" respawn="false" output="screen">
+        <remap from="image" to="/usb_cam/image_raw"/>
+        <param name="autosize" value="true" />
+    </node>
+</launch>
