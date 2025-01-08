@@ -102,6 +102,8 @@ class ColorTracker:
             
             if self.tracking_roi and self.selected_roi:
                 x, y, w, h = self.selected_roi
+                # 计算当前ROI的面积
+                area = w * h
                 cv2.rectangle(cv_image, (x, y), (x+w, y+h), (0, 255, 0), 2)
                 
                 roi_hsv = hsv[y:y+h, x:x+w]
