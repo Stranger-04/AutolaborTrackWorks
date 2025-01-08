@@ -36,6 +36,15 @@ class ColorTracker:
         self.image_sub = rospy.Subscriber("/camera/image_raw", Image, self.image_callback)
         self.cmd_vel_pub = rospy.Publisher('cmd_vel', Twist, queue_size=1)
 
+        # 添加框选相关变量
+        self.drawing = False
+        self.roi_points = []
+        self.selected_roi = None
+        self.tracking_roi = False
+        
+        # 添加鼠标回调
+        cv2.setMouseCallback('camera_view', self.mouse_callback)
+
     def get_color_mask(self, hsv_image):
         """获取指定颜色的掩码"""
         if self.target_color == 'red':
@@ -58,71 +67,93 @@ class ColorTracker:
         mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel)
         return mask
 
+    def mouse_callback(self, event, x, y, flags, param):
+        """处理鼠标事件"""
+        if event == cv2.EVENT_LBUTTONDOWN:
+            self.drawing = True
+            self.roi_points = [(x, y)]
+            self.tracking_roi = False
+        elif event == cv2.EVENT_MOUSEMOVE and self.drawing:
+            frame_copy = self.current_frame.copy()
+            cv2.rectangle(frame_copy, self.roi_points[0], (x, y), (0, 255, 0), 2)
+            cv2.imshow('camera_view', frame_copy)
+        elif event == cv2.EVENT_LBUTTONUP:
+            self.drawing = False
+            self.roi_points.append((x, y))
+            self.selected_roi = self.get_roi_coordinates()
+            self.tracking_roi = True
+
+    def get_roi_coordinates(self):
+        """获取ROI坐标"""
+        if len(self.roi_points) == 2:
+            x1, y1 = self.roi_points[0]
+            x2, y2 = self.roi_points[1]
+            return (min(x1, x2), min(y1, y2), abs(x2-x1), abs(y2-y1))
+        return None
+
     def image_callback(self, msg):
         try:
             # 转换ROS图像消息到OpenCV格式
             cv_image = self.bridge.imgmsg_to_cv2(msg, "bgr8")
+            self.current_frame = cv_image.copy()  # 保存当前帧
             hsv = cv2.cvtColor(cv_image, cv2.COLOR_BGR2HSV)
             
-            # 获取颜色掩码
-            mask = self.get_color_mask(hsv)
-            
-            # 使用%格式化替代f-string
-            debug_info = "目标颜色: %s" % self.target_color
-            cv2.putText(cv_image, debug_info, (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
-            
-            # 修改findContours调用以兼容OpenCV 3.x
-            _, contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-            
-            # 创建运动控制消息
-            cmd = Twist()
-            
-            if contours:
-                # 获取最大轮廓
-                largest_contour = max(contours, key=cv2.contourArea)
-                area = cv2.contourArea(largest_contour)
+            if self.tracking_roi and self.selected_roi:
+                x, y, w, h = self.selected_roi
+                # 绘制选中的区域
+                cv2.rectangle(cv_image, (x, y), (x+w, y+h), (0, 255, 0), 2)
                 
-                if area > self.min_area:
-                    # 计算轮廓的中心点
-                    M = cv2.moments(largest_contour)
-                    if M['m00'] > 0:
-                        cx = int(M['m10'] / M['m00'])
-                        cy = int(M['m01'] / M['m00'])
-                        
-                        # 绘制轮廓和中心点
-                        cv2.drawContours(cv_image, [largest_contour], -1, (0,255,0), 2)
-                        cv2.circle(cv_image, (cx,cy), 5, (0,0,255), -1)
-                        
-                        # 计算偏离中心的误差
-                        error_x = cx - self.image_center_x
-                        
-                        # 使用%格式化替代f-string
-                        control_info = "Error_X: %.2f" % error_x
-                        cv2.putText(cv_image, control_info, (10, 60), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
-                        
-                        angular_z = -self.angular_speed * (error_x / float(self.image_center_x))
-                        cmd_info = "Angular: %.2f" % angular_z
-                        cv2.putText(cv_image, cmd_info, (10, 90), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
-                        
-                        # 根据误差控制机器人运动
-                        if abs(error_x) > self.center_threshold:
-                            # 转向控制
-                            cmd.angular.z = angular_z
-                        else:
-                            # 前进控制
-                            cmd.linear.x = self.linear_speed
-                            cmd_info = "Linear: %.2f" % self.linear_speed
-                            cv2.putText(cv_image, cmd_info, (10, 120), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
-                        
-                        rospy.loginfo("目标位置: (%d, %d), 面积: %.2f", cx, cy, area)
+                # 获取ROI区域的HSV值范围
+                roi_hsv = hsv[y:y+h, x:x+w]
+                if roi_hsv.size > 0:
+                    roi_hist = cv2.calcHist([roi_hsv], [0], None, [180], [0, 180])
+                    roi_hist = cv2.normalize(roi_hist, roi_hist, 0, 255, cv2.NORM_MINMAX)
+                    
+                    # 反向投影
+                    dst = cv2.calcBackProject([hsv], [0], roi_hist, [0, 180], 1)
+                    
+                    # 使用均值漂移跟踪
+                    term_crit = (cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT, 10, 1)
+                    ret, self.selected_roi = cv2.CamShift(dst, self.selected_roi, term_crit)
+                    
+                    # 更新中心点位置
+                    cx = x + w//2
+                    cy = y + h//2
+                    
+                    # 控制逻辑
+                    error_x = cx - self.image_center_x
+                    control_info = "Error_X: %.2f" % error_x
+                    cv2.putText(cv_image, control_info, (10, 60), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
+                    
+                    # 创建运动控制消息
+                    cmd = Twist()
+                    angular_z = -self.angular_speed * (error_x / float(self.image_center_x))
+                    cmd_info = "Angular: %.2f" % angular_z
+                    cv2.putText(cv_image, cmd_info, (10, 90), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
+                    
+                    # 根据误差控制机器人运动
+                    if abs(error_x) > self.center_threshold:
+                        # 转向控制
+                        cmd.angular.z = angular_z
+                    else:
+                        # 前进控制
+                        cmd.linear.x = self.linear_speed
+                        cmd_info = "Linear: %.2f" % self.linear_speed
+                        cv2.putText(cv_image, cmd_info, (10, 120), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
+                    
+                    rospy.loginfo("目标位置: (%d, %d), 面积: %.2f", cx, cy, area)
             
-            # 发布控制命令
-            self.cmd_vel_pub.publish(cmd)
+            # 显示提示信息
+            cv2.putText(cv_image, "Press 'r' to reset tracking", (10, 30), 
+                       cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
             
             # 显示图像
             cv2.imshow('camera_view', cv_image)
             cv2.imshow('mask', mask)
-            cv2.waitKey(3)
+            key = cv2.waitKey(3) & 0xFF
+            if key == ord('r'):
+                self.tracking_roi = False
+                self.selected_roi = None
             
         except Exception as e:
             rospy.logerr("图像处理错误: %s", str(e))
