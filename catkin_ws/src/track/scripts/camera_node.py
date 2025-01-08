@@ -97,56 +97,82 @@ class ColorTracker:
             self.current_frame = cv_image.copy()
             hsv = cv2.cvtColor(cv_image, cv2.COLOR_BGR2HSV)
             
-            # 初始化mask变量
             mask = np.zeros(cv_image.shape[:2], dtype=np.uint8)
+            cmd = Twist()
             
             if self.tracking_roi and self.selected_roi:
                 x, y, w, h = self.selected_roi
-                # 计算当前ROI的面积
                 area = w * h
-                cv2.rectangle(cv_image, (x, y), (x+w, y+h), (0, 255, 0), 2)
                 
+                # 获取ROI区域的所有颜色通道直方图
                 roi_hsv = hsv[y:y+h, x:x+w]
                 if roi_hsv.size > 0:
-                    # 获取ROI区域的HSV值范围
-                    roi_hist = cv2.calcHist([roi_hsv], [0], None, [180], [0, 180])
-                    roi_hist = cv2.normalize(roi_hist, roi_hist, 0, 255, cv2.NORM_MINMAX)
+                    # 使用所有HSV通道
+                    channels = [0, 1, 2]  # H, S, V channels
+                    ranges = [180, 256, 256]  # HSV各通道的范围
+                    roi_hist = cv2.calcHist([roi_hsv], channels, None, ranges, [0, 180, 0, 256, 0, 256])
+                    cv2.normalize(roi_hist, roi_hist, 0, 255, cv2.NORM_MINMAX)
                     
                     # 反向投影
-                    dst = cv2.calcBackProject([hsv], [0], roi_hist, [0, 180], 1)
+                    dst = cv2.calcBackProject([hsv], channels, roi_hist, ranges, 1)
                     
-                    # 使用均值漂移跟踪
+                    # 应用形态学操作增强目标区域
+                    kernel = np.ones((5,5), np.uint8)
+                    dst = cv2.morphologyEx(dst, cv2.MORPH_CLOSE, kernel)
+                    dst = cv2.morphologyEx(dst, cv2.MORPH_OPEN, kernel)
+                    
+                    # 使用CamShift跟踪
                     term_crit = (cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT, 10, 1)
-                    ret, self.selected_roi = cv2.CamShift(dst, self.selected_roi, term_crit)
+                    ret, track_window = cv2.CamShift(dst, self.selected_roi, term_crit)
                     
-                    # 更新中心点位置
-                    cx = x + w//2
-                    cy = y + h//2
+                    # 验证跟踪结果
+                    new_area = track_window[2] * track_window[3]
+                    area_ratio = new_area / float(area)
                     
-                    # 控制逻辑
-                    error_x = cx - self.image_center_x
-                    control_info = "Error_X: %.2f" % error_x
-                    cv2.putText(cv_image, control_info, (10, 60), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
-                    
-                    # 创建运动控制消息
-                    cmd = Twist()
-                    angular_z = -self.angular_speed * (error_x / float(self.image_center_x))
-                    cmd_info = "Angular: %.2f" % angular_z
-                    cv2.putText(cv_image, cmd_info, (10, 90), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
-                    
-                    # 根据误差控制机器人运动
-                    if abs(error_x) > self.center_threshold:
-                        # 转向控制
-                        cmd.angular.z = angular_z
+                    # 如果面积变化太大，可能是跟踪目标错误
+                    if 0.3 < area_ratio < 3.0:  # 允许面积在原始面积的0.3-3倍范围内变化
+                        self.selected_roi = track_window
+                        x, y, w, h = track_window
+                        
+                        # 绘制跟踪框和中心点
+                        cv2.rectangle(cv_image, (x, y), (x+w, y+h), (0, 255, 0), 2)
+                        cx = x + w//2
+                        cy = y + h//2
+                        cv2.circle(cv_image, (cx, cy), 5, (0, 0, 255), -1)
+                        
+                        # 显示跟踪信息
+                        cv2.putText(cv_image, "Area Ratio: %.2f" % area_ratio, (10, 150), 
+                                  cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
+                        
+                        # 更新控制命令
+                        error_x = cx - self.image_center_x
+                        control_info = "Error_X: %.2f" % error_x
+                        cv2.putText(cv_image, control_info, (10, 60), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
+                        
+                        # 创建运动控制消息
+                        angular_z = -self.angular_speed * (error_x / float(self.image_center_x))
+                        cmd_info = "Angular: %.2f" % angular_z
+                        cv2.putText(cv_image, cmd_info, (10, 90), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
+                        
+                        # 根据误差控制机器人运动
+                        if abs(error_x) > self.center_threshold:
+                            # 转向控制
+                            cmd.angular.z = angular_z
+                        else:
+                            # 前进控制
+                            cmd.linear.x = self.linear_speed
+                            cmd_info = "Linear: %.2f" % self.linear_speed
+                            cv2.putText(cv_image, cmd_info, (10, 120), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
+                        
+                        rospy.loginfo("目标位置: (%d, %d), 面积: %.2f", cx, cy, area)
+                        
+                        # 更新mask为反向投影结果
+                        mask = dst
                     else:
-                        # 前进控制
-                        cmd.linear.x = self.linear_speed
-                        cmd_info = "Linear: %.2f" % self.linear_speed
-                        cv2.putText(cv_image, cmd_info, (10, 120), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
+                        # 跟踪可能丢失，显示警告
+                        cv2.putText(cv_image, "Warning: Tracking unstable", (10, 180), 
+                                  cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
                     
-                    rospy.loginfo("目标位置: (%d, %d), 面积: %.2f", cx, cy, area)
-                    
-                    # 更新mask为反向投影结果
                     mask = dst
             else:
                 # 如果没有ROI追踪，使用颜色掩码
