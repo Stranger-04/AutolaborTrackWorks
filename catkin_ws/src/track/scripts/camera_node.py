@@ -93,19 +93,20 @@ class ColorTracker:
 
     def image_callback(self, msg):
         try:
-            # 转换ROS图像消息到OpenCV格式
             cv_image = self.bridge.imgmsg_to_cv2(msg, "bgr8")
-            self.current_frame = cv_image.copy()  # 保存当前帧
+            self.current_frame = cv_image.copy()
             hsv = cv2.cvtColor(cv_image, cv2.COLOR_BGR2HSV)
+            
+            # 初始化mask变量
+            mask = np.zeros(cv_image.shape[:2], dtype=np.uint8)
             
             if self.tracking_roi and self.selected_roi:
                 x, y, w, h = self.selected_roi
-                # 绘制选中的区域
                 cv2.rectangle(cv_image, (x, y), (x+w, y+h), (0, 255, 0), 2)
                 
-                # 获取ROI区域的HSV值范围
                 roi_hsv = hsv[y:y+h, x:x+w]
                 if roi_hsv.size > 0:
+                    # 获取ROI区域的HSV值范围
                     roi_hist = cv2.calcHist([roi_hsv], [0], None, [180], [0, 180])
                     roi_hist = cv2.normalize(roi_hist, roi_hist, 0, 255, cv2.NORM_MINMAX)
                     
@@ -142,12 +143,18 @@ class ColorTracker:
                         cv2.putText(cv_image, cmd_info, (10, 120), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
                     
                     rospy.loginfo("目标位置: (%d, %d), 面积: %.2f", cx, cy, area)
+                    
+                    # 更新mask为反向投影结果
+                    mask = dst
+            else:
+                # 如果没有ROI追踪，使用颜色掩码
+                mask = self.get_color_mask(hsv)
             
             # 显示提示信息
             cv2.putText(cv_image, "Press 'r' to reset tracking", (10, 30), 
                        cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
             
-            # 显示图像
+            # 显示图像和掩码
             cv2.imshow('camera_view', cv_image)
             cv2.imshow('mask', mask)
             key = cv2.waitKey(3) & 0xFF
@@ -157,6 +164,8 @@ class ColorTracker:
             
         except Exception as e:
             rospy.logerr("图像处理错误: %s", str(e))
+            import traceback
+            rospy.logerr(traceback.format_exc())  # 添加详细错误信息
 
     def cleanup(self):
         """清理资源"""
