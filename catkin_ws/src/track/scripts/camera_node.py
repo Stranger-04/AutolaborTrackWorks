@@ -104,24 +104,30 @@ class ColorTracker:
                 x, y, w, h = self.selected_roi
                 area = w * h
                 
-                # 获取ROI区域的所有颜色通道直方图
                 roi_hsv = hsv[y:y+h, x:x+w]
                 if roi_hsv.size > 0:
-                    # 使用所有HSV通道
-                    channels = [0, 1, 2]  # H, S, V channels
-                    ranges = [180, 256, 256]  # HSV各通道的范围
-                    roi_hist = cv2.calcHist([roi_hsv], channels, None, ranges, [0, 180, 0, 256, 0, 256])
-                    cv2.normalize(roi_hist, roi_hist, 0, 255, cv2.NORM_MINMAX)
+                    # 修改直方图计算方法
+                    hsv_planes = [roi_hsv[:,:,0], roi_hsv[:,:,1], roi_hsv[:,:,2]]
+                    roi_hist_h = cv2.calcHist([hsv_planes[0]], [0], None, [180], [0, 180])
+                    roi_hist_s = cv2.calcHist([hsv_planes[1]], [0], None, [256], [0, 256])
                     
-                    # 反向投影
-                    dst = cv2.calcBackProject([hsv], channels, roi_hist, ranges, 1)
+                    # 归一化直方图
+                    cv2.normalize(roi_hist_h, roi_hist_h, 0, 255, cv2.NORM_MINMAX)
+                    cv2.normalize(roi_hist_s, roi_hist_s, 0, 255, cv2.NORM_MINMAX)
                     
-                    # 应用形态学操作增强目标区域
+                    # 分别计算H和S通道的反向投影
+                    h_back = cv2.calcBackProject([hsv], [0], roi_hist_h, [0, 180], 1)
+                    s_back = cv2.calcBackProject([hsv], [1], roi_hist_s, [0, 256], 1)
+                    
+                    # 合并两个通道的结果
+                    dst = cv2.multiply(h_back, s_back)
+                    
+                    # 应用形态学操作
                     kernel = np.ones((5,5), np.uint8)
                     dst = cv2.morphologyEx(dst, cv2.MORPH_CLOSE, kernel)
                     dst = cv2.morphologyEx(dst, cv2.MORPH_OPEN, kernel)
                     
-                    # 使用CamShift跟踪
+                    # 使用均值漂移跟踪
                     term_crit = (cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT, 10, 1)
                     ret, track_window = cv2.CamShift(dst, self.selected_roi, term_crit)
                     
@@ -129,8 +135,7 @@ class ColorTracker:
                     new_area = track_window[2] * track_window[3]
                     area_ratio = new_area / float(area)
                     
-                    # 如果面积变化太大，可能是跟踪目标错误
-                    if 0.3 < area_ratio < 3.0:  # 允许面积在原始面积的0.3-3倍范围内变化
+                    if 0.3 < area_ratio < 3.0:
                         self.selected_roi = track_window
                         x, y, w, h = track_window
                         
