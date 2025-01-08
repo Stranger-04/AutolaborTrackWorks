@@ -67,8 +67,8 @@ class ColorTracker:
             # 获取颜色掩码
             mask = self.get_color_mask(hsv)
             
-            # 查找轮廓
-            contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+            # 修改findContours调用以兼容OpenCV 3.x
+            _, contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
             
             # 创建运动控制消息
             cmd = Twist()
